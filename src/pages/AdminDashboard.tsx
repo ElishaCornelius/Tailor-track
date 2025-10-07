@@ -5,6 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import StatusBadge from "@/components/StatusBadge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type JobStatus = "red" | "yellow" | "green";
 
@@ -74,6 +81,12 @@ const AdminDashboard = () => {
   const handleLogout = () => {
     localStorage.removeItem("isAdminAuthenticated");
     navigate("/admin/login");
+  };
+
+  const handleStatusChange = (jobId: string, newStatus: JobStatus) => {
+    setJobs(jobs.map(job => 
+      job.id === jobId ? { ...job, status: newStatus } : job
+    ));
   };
 
   const activeJobs = jobs.filter((j) => j.status !== "green").length;
@@ -166,7 +179,31 @@ const AdminDashboard = () => {
                     <p className="font-semibold">{job.customerName}</p>
                     <p className="text-sm text-muted-foreground">Code: {job.code}</p>
                   </div>
-                  <StatusBadge status={job.status} />
+                  {job.status === "green" ? (
+                    <StatusBadge status={job.status} />
+                  ) : (
+                    <Select
+                      value={job.status}
+                      onValueChange={(value) => handleStatusChange(job.id, value as JobStatus)}
+                    >
+                      <SelectTrigger className="w-[140px]">
+                        <SelectValue>
+                          <StatusBadge status={job.status} size="sm" />
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="red">
+                          <StatusBadge status="red" size="sm" />
+                        </SelectItem>
+                        <SelectItem value="yellow">
+                          <StatusBadge status="yellow" size="sm" />
+                        </SelectItem>
+                        <SelectItem value="green">
+                          <StatusBadge status="green" size="sm" />
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
                 <p className="text-sm mb-2">{job.description}</p>
                 <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
