@@ -1,14 +1,15 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Lock, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const AdminLogin = () => {
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -17,17 +18,21 @@ const AdminLogin = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Temporary simple auth - will be replaced with proper authentication
-    setTimeout(() => {
-      if (password === "admin123") {
-        localStorage.setItem("isAdminAuthenticated", "true");
-        toast.success("Login successful!");
-        navigate("/admin/dashboard");
-      } else {
-        toast.error("Invalid password");
-      }
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      toast.success("Login successful!");
+      navigate("/admin/dashboard");
+    } catch (error: any) {
+      toast.error(error.message || "Invalid credentials");
+    } finally {
       setIsLoading(false);
-    }, 500);
+    }
   };
 
   return (
@@ -51,11 +56,23 @@ const AdminLogin = () => {
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
                 type="password"
-                placeholder="Enter admin password"
+                placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -68,7 +85,10 @@ const AdminLogin = () => {
           </form>
 
           <p className="text-sm text-muted-foreground text-center mt-6">
-            Default password: <code className="bg-muted px-2 py-1 rounded">admin123</code>
+            Don't have an account?{" "}
+            <Link to="/company/register" className="text-primary hover:underline">
+              Register your company
+            </Link>
           </p>
         </Card>
       </div>

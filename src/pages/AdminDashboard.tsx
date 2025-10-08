@@ -1,9 +1,14 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Plus, TrendingUp, Users, CheckCircle, LogOut } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
+import {
+  LayoutDashboard,
+  Plus,
+  TrendingUp,
+  History as HistoryIcon,
+  LogOut,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Link } from "react-router-dom";
 import StatusBadge from "@/components/StatusBadge";
 import {
   Select,
@@ -12,210 +17,303 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 type JobStatus = "red" | "yellow" | "green";
 
 interface Job {
   id: string;
   code: string;
-  customerName: string;
-  customerPhone: string;
+  customer_name: string;
   description: string;
-  numberOfDresses: number;
+  num_dresses: number;
   price: number;
   status: JobStatus;
-  createdAt: string;
+  created_at: string;
 }
 
 const AdminDashboard = () => {
+  const { user, loading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [companyName, setCompanyName] = useState("");
 
   useEffect(() => {
-    // Check authentication
-    const isAuth = localStorage.getItem("isAdminAuthenticated");
-    if (!isAuth) {
+    if (!authLoading && !user) {
       navigate("/admin/login");
-      return;
     }
+  }, [user, authLoading, navigate]);
 
-    // Load demo data
-    const demoJobs: Job[] = [
-      {
-        id: "1",
-        code: "TT-001",
-        customerName: "Amaka Johnson",
-        customerPhone: "+234 801 234 5678",
-        description: "2 Ankara gowns",
-        numberOfDresses: 2,
-        price: 25000,
-        status: "green",
-        createdAt: new Date().toISOString(),
-      },
-      {
-        id: "2",
-        code: "TT-002",
-        customerName: "Chidinma Okafor",
-        customerPhone: "+234 802 345 6789",
-        description: "1 wedding gown, 2 bridesmaid dresses",
-        numberOfDresses: 3,
-        price: 85000,
-        status: "yellow",
-        createdAt: new Date().toISOString(),
-      },
-      {
-        id: "3",
-        code: "TT-003",
-        customerName: "Ngozi Adeyemi",
-        customerPhone: "+234 803 456 7890",
-        description: "3 casual shirts",
-        numberOfDresses: 3,
-        price: 15000,
-        status: "red",
-        createdAt: new Date().toISOString(),
-      },
-    ];
-    setJobs(demoJobs);
-  }, [navigate]);
+  useEffect(() => {
+    if (user) {
+      fetchJobs();
+      fetchCompanyInfo();
+    }
+  }, [user]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("isAdminAuthenticated");
-    navigate("/admin/login");
+  const fetchCompanyInfo = async () => {
+    if (!user) return;
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("company_id")
+      .eq("id", user.id)
+      .single();
+
+    if (profile?.company_id) {
+      const { data: company } = await supabase
+        .from("companies")
+        .select("name")
+        .eq("id", profile.company_id)
+        .single();
+
+      if (company) {
+        setCompanyName(company.name);
+      }
+    }
   };
 
-  const handleStatusChange = (jobId: string, newStatus: JobStatus) => {
-    setJobs(jobs.map(job => 
-      job.id === jobId ? { ...job, status: newStatus } : job
-    ));
+  const fetchJobs = async () => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from("jobs")
+      .select(`
+        id,
+        code,
+        description,
+        num_dresses,
+        price,
+        status,
+        created_at,
+        customers (name)
+      `)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      toast.error("Failed to load jobs");
+      console.error(error);
+    } else {
+      const formattedJobs = data.map((job: any) => ({
+        id: job.id,
+        code: job.code,
+        customer_name: job.customers?.name || "Unknown",
+        description: job.description,
+        num_dresses: job.num_dresses,
+        price: job.price,
+        status: job.status as JobStatus,
+        created_at: job.created_at,
+      }));
+      setJobs(formattedJobs);
+    }
+    setLoading(false);
   };
+
+  const handleStatusChange = async (jobId: string, newStatus: JobStatus) => {
+    const { error } = await supabase
+      .from("jobs")
+      .update({ 
+        status: newStatus,
+        completed_at: newStatus === "green" ? new Date().toISOString() : null
+      })
+      .eq("id", jobId);
+
+    if (error) {
+      toast.error("Failed to update job status");
+    } else {
+      setJobs(
+        jobs.map((job) =>
+          job.id === jobId ? { ...job, status: newStatus } : job
+        )
+      );
+      toast.success("Job status updated");
+    }
+  };
+
+  if (authLoading || loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   const activeJobs = jobs.filter((j) => j.status !== "green").length;
-  const completedToday = jobs.filter((j) => j.status === "green").length;
-  const totalCustomers = new Set(jobs.map((j) => j.customerName)).size;
+  const completedToday = jobs.filter((j) => {
+    const jobDate = new Date(j.created_at);
+    const today = new Date();
+    return (
+      j.status === "green" &&
+      jobDate.toDateString() === today.toDateString()
+    );
+  }).length;
+  const totalCustomers = new Set(jobs.map((j) => j.customer_name)).size;
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b bg-card shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-          <Button variant="outline" onClick={handleLogout}>
+    <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-background p-4 md:p-8">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+          <div>
+            <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
+              <LayoutDashboard className="w-10 h-10 text-primary" />
+              Dashboard
+            </h1>
+            {companyName && (
+              <p className="text-muted-foreground">{companyName}</p>
+            )}
+          </div>
+          <Button onClick={signOut} variant="outline" size="sm">
             <LogOut className="w-4 h-4 mr-2" />
             Logout
           </Button>
         </div>
-      </header>
 
-      <main className="container mx-auto px-4 py-8">
-        {/* Stats Grid */}
+        {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="p-6 shadow-card hover:shadow-luxury transition-shadow">
+          <Card className="p-6 hover:shadow-luxury transition-all">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Active Jobs</p>
-                <p className="text-3xl font-bold">{activeJobs}</p>
+                <p className="text-3xl font-bold text-status-yellow">
+                  {activeJobs}
+                </p>
               </div>
               <div className="w-12 h-12 rounded-full bg-status-yellow/10 flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-status-yellow" />
+                <LayoutDashboard className="w-6 h-6 text-status-yellow" />
               </div>
             </div>
           </Card>
 
-          <Card className="p-6 shadow-card hover:shadow-luxury transition-shadow">
+          <Card className="p-6 hover:shadow-luxury transition-all">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Completed Today</p>
-                <p className="text-3xl font-bold">{completedToday}</p>
+                <p className="text-sm text-muted-foreground mb-1">
+                  Completed Today
+                </p>
+                <p className="text-3xl font-bold text-status-green">
+                  {completedToday}
+                </p>
               </div>
               <div className="w-12 h-12 rounded-full bg-status-green/10 flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-status-green" />
+                <TrendingUp className="w-6 h-6 text-status-green" />
               </div>
             </div>
           </Card>
 
-          <Card className="p-6 shadow-card hover:shadow-luxury transition-shadow">
+          <Card className="p-6 hover:shadow-luxury transition-all">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Total Customers</p>
-                <p className="text-3xl font-bold">{totalCustomers}</p>
+                <p className="text-sm text-muted-foreground mb-1">
+                  Total Customers
+                </p>
+                <p className="text-3xl font-bold text-primary">
+                  {totalCustomers}
+                </p>
               </div>
               <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <Users className="w-6 h-6 text-primary" />
+                <TrendingUp className="w-6 h-6 text-primary" />
               </div>
             </div>
           </Card>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           <Link to="/admin/add-job">
-            <Button size="lg">
-              <Plus className="w-4 h-4 mr-2" />
+            <Button className="w-full" size="lg">
+              <Plus className="w-5 h-5 mr-2" />
               Add New Job
             </Button>
           </Link>
           <Link to="/admin/rankings">
-            <Button variant="outline" size="lg">
-              Customer Rankings
+            <Button variant="outline" className="w-full" size="lg">
+              <TrendingUp className="w-5 h-5 mr-2" />
+              View Rankings
             </Button>
           </Link>
           <Link to="/admin/history">
-            <Button variant="outline" size="lg">
-              Past Jobs
+            <Button variant="outline" className="w-full" size="lg">
+              <HistoryIcon className="w-5 h-5 mr-2" />
+              View History
             </Button>
           </Link>
         </div>
 
         {/* Jobs List */}
-        <Card className="p-6 shadow-card">
-          <h2 className="text-xl font-bold mb-4">All Jobs</h2>
-          <div className="space-y-4">
-            {jobs.map((job) => (
-              <div
-                key={job.id}
-                className="p-4 border rounded-lg hover:border-primary/50 transition-colors"
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <p className="font-semibold">{job.customerName}</p>
-                    <p className="text-sm text-muted-foreground">Code: {job.code}</p>
+        <Card className="p-6">
+          <h2 className="text-2xl font-bold mb-6">All Jobs</h2>
+          {jobs.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground mb-4">No jobs yet</p>
+              <Link to="/admin/add-job">
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Your First Job
+                </Button>
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {jobs.map((job) => (
+                <div
+                  key={job.id}
+                  className="p-4 border rounded-lg hover:bg-accent/5 transition-colors"
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <p className="font-semibold">{job.customer_name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Code: {job.code}
+                      </p>
+                    </div>
+                    {job.status === "green" ? (
+                      <StatusBadge status={job.status} />
+                    ) : (
+                      <Select
+                        value={job.status}
+                        onValueChange={(value) =>
+                          handleStatusChange(job.id, value as JobStatus)
+                        }
+                      >
+                        <SelectTrigger className="w-[140px]">
+                          <SelectValue>
+                            <StatusBadge status={job.status} size="sm" />
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="red">
+                            <StatusBadge status="red" size="sm" />
+                          </SelectItem>
+                          <SelectItem value="yellow">
+                            <StatusBadge status="yellow" size="sm" />
+                          </SelectItem>
+                          <SelectItem value="green">
+                            <StatusBadge status="green" size="sm" />
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
                   </div>
-                  {job.status === "green" ? (
-                    <StatusBadge status={job.status} />
-                  ) : (
-                    <Select
-                      value={job.status}
-                      onValueChange={(value) => handleStatusChange(job.id, value as JobStatus)}
-                    >
-                      <SelectTrigger className="w-[140px]">
-                        <SelectValue>
-                          <StatusBadge status={job.status} size="sm" />
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="red">
-                          <StatusBadge status="red" size="sm" />
-                        </SelectItem>
-                        <SelectItem value="yellow">
-                          <StatusBadge status="yellow" size="sm" />
-                        </SelectItem>
-                        <SelectItem value="green">
-                          <StatusBadge status="green" size="sm" />
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
+                  <p className="text-sm mb-2">{job.description}</p>
+                  <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                    <span>Dresses: {job.num_dresses}</span>
+                    <span>Price: ₦{job.price.toLocaleString()}</span>
+                    <span>
+                      Date: {new Date(job.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
                 </div>
-                <p className="text-sm mb-2">{job.description}</p>
-                <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                  <span>{job.numberOfDresses} dresses</span>
-                  <span>₦{job.price.toLocaleString()}</span>
-                  <span>{job.customerPhone}</span>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </Card>
-      </main>
+      </div>
     </div>
   );
 };

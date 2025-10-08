@@ -19,19 +19,36 @@ const Index = () => {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8">
+        <div className="grid md:grid-cols-3 gap-8">
           <Card className="p-8 hover:shadow-luxury transition-all duration-300 group">
             <div className="text-center">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4 group-hover:bg-primary/20 transition-colors">
                 <UserCircle className="w-8 h-8 text-primary" />
               </div>
-              <h2 className="text-2xl font-bold mb-3">Admin Panel</h2>
+              <h2 className="text-2xl font-bold mb-3">Register Company</h2>
+              <p className="text-muted-foreground mb-6">
+                Create your sewing company workspace
+              </p>
+              <Link to="/company/register">
+                <Button className="w-full" size="lg">
+                  Register Now
+                </Button>
+              </Link>
+            </div>
+          </Card>
+
+          <Card className="p-8 hover:shadow-luxury transition-all duration-300 group">
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4 group-hover:bg-primary/20 transition-colors">
+                <UserCircle className="w-8 h-8 text-primary" />
+              </div>
+              <h2 className="text-2xl font-bold mb-3">Admin Login</h2>
               <p className="text-muted-foreground mb-6">
                 Manage jobs, track progress, and view customer insights
               </p>
               <Link to="/admin/login">
                 <Button className="w-full" size="lg">
-                  Access Admin Panel
+                  Login
                 </Button>
               </Link>
             </div>
