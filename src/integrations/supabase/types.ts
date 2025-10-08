@@ -87,6 +87,7 @@ export type Database = {
       }
       jobs: {
         Row: {
+          amount_paid: number | null
           code: string
           company_id: string
           completed_at: string | null
@@ -95,10 +96,12 @@ export type Database = {
           description: string
           id: string
           num_dresses: number
+          outstanding_amount: number | null
           price: number
           status: string
         }
         Insert: {
+          amount_paid?: number | null
           code: string
           company_id: string
           completed_at?: string | null
@@ -107,10 +110,12 @@ export type Database = {
           description: string
           id?: string
           num_dresses: number
+          outstanding_amount?: number | null
           price: number
           status: string
         }
         Update: {
+          amount_paid?: number | null
           code?: string
           company_id?: string
           completed_at?: string | null
@@ -119,6 +124,7 @@ export type Database = {
           description?: string
           id?: string
           num_dresses?: number
+          outstanding_amount?: number | null
           price?: number
           status?: string
         }

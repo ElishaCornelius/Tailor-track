@@ -9,41 +9,129 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 type JobStatus = "red" | "yellow" | "green";
 
 const AddJob = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     customerName: "",
     customerPhone: "",
     description: "",
     numberOfDresses: "",
     price: "",
+    amountPaid: "",
+    outstandingAmount: "",
     status: "red" as JobStatus,
   });
 
-  const generateJobCode = () => {
-    const timestamp = Date.now().toString(36).toUpperCase();
-    return `TT-${timestamp.slice(-6)}`;
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const jobCode = generateJobCode();
     
-    toast.success(
-      <div>
-        <p className="font-semibold">Job created successfully!</p>
-        <p className="text-sm mt-1">Job Code: <span className="font-mono font-bold">{jobCode}</span></p>
-      </div>,
-      { duration: 5000 }
-    );
+    if (!user) {
+      toast.error("You must be logged in to create a job");
+      return;
+    }
 
-    // Will be saved to database
-    console.log({ ...formData, code: jobCode });
-    
-    navigate("/admin/dashboard");
+    try {
+      // Get user's company_id
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("company_id")
+        .eq("id", user.id)
+        .single();
+
+      if (!profile?.company_id) {
+        toast.error("Company not found");
+        return;
+      }
+
+      // Get company code for job code generation
+      const { data: company } = await supabase
+        .from("companies")
+        .select("company_code")
+        .eq("id", profile.company_id)
+        .single();
+
+      if (!company) {
+        toast.error("Company not found");
+        return;
+      }
+
+      // Check if customer exists, if not create
+      let customerId: string;
+      const { data: existingCustomer } = await supabase
+        .from("customers")
+        .select("id")
+        .eq("company_id", profile.company_id)
+        .eq("phone", formData.customerPhone)
+        .maybeSingle();
+
+      if (existingCustomer) {
+        customerId = existingCustomer.id;
+      } else {
+        const { data: newCustomer, error: customerError } = await supabase
+          .from("customers")
+          .insert({
+            company_id: profile.company_id,
+            name: formData.customerName,
+            phone: formData.customerPhone,
+          })
+          .select("id")
+          .single();
+
+        if (customerError || !newCustomer) {
+          toast.error("Failed to create customer");
+          return;
+        }
+        customerId = newCustomer.id;
+      }
+
+      // Generate job code using database function
+      const { data: jobCodeData, error: jobCodeError } = await supabase
+        .rpc("generate_job_code", { company_code: company.company_code });
+
+      if (jobCodeError || !jobCodeData) {
+        toast.error("Failed to generate job code");
+        return;
+      }
+
+      // Create job
+      const { error: jobError } = await supabase.from("jobs").insert({
+        company_id: profile.company_id,
+        customer_id: customerId,
+        code: jobCodeData,
+        description: formData.description,
+        num_dresses: parseInt(formData.numberOfDresses),
+        price: parseFloat(formData.price),
+        amount_paid: parseFloat(formData.amountPaid) || 0,
+        outstanding_amount: parseFloat(formData.outstandingAmount) || 0,
+        status: formData.status,
+      });
+
+      if (jobError) {
+        toast.error("Failed to create job");
+        return;
+      }
+
+      toast.success(
+        <div>
+          <p className="font-semibold">Job created successfully!</p>
+          <p className="text-sm mt-1">
+            Job Code: <span className="font-mono font-bold">{jobCodeData}</span>
+          </p>
+        </div>,
+        { duration: 5000 }
+      );
+
+      navigate("/admin/dashboard");
+    } catch (error) {
+      console.error("Error creating job:", error);
+      toast.error("An error occurred while creating the job");
+    }
   };
 
   return (
@@ -112,7 +200,7 @@ const AddJob = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="price">Price (₦) *</Label>
+                <Label htmlFor="price">Total Price (₦) *</Label>
                 <Input
                   id="price"
                   type="number"
@@ -121,6 +209,32 @@ const AddJob = () => {
                   value={formData.price}
                   onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                   required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="amountPaid">Amount Paid (₦)</Label>
+                <Input
+                  id="amountPaid"
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                  value={formData.amountPaid}
+                  onChange={(e) => setFormData({ ...formData, amountPaid: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="outstandingAmount">Outstanding Amount (₦)</Label>
+                <Input
+                  id="outstandingAmount"
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                  value={formData.outstandingAmount}
+                  onChange={(e) => setFormData({ ...formData, outstandingAmount: e.target.value })}
                 />
               </div>
             </div>
