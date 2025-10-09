@@ -11,6 +11,18 @@ import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { z } from "zod";
+
+const jobSchema = z.object({
+  customerName: z.string().trim().min(2, "Customer name must be at least 2 characters").max(100, "Name too long"),
+  customerPhone: z.string().trim().min(10, "Phone number must be at least 10 digits").max(20, "Phone number too long"),
+  description: z.string().trim().min(5, "Description must be at least 5 characters").max(500, "Description too long"),
+  numberOfDresses: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, "Must be a positive number"),
+  price: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, "Must be a positive number"),
+  amountPaid: z.string().refine((val) => val === "" || (!isNaN(Number(val)) && Number(val) >= 0), "Must be a positive number or empty"),
+  outstandingAmount: z.string().refine((val) => val === "" || (!isNaN(Number(val)) && Number(val) >= 0), "Must be a positive number or empty"),
+  status: z.enum(["red", "yellow", "green"]),
+});
 
 type JobStatus = "red" | "yellow" | "green";
 
@@ -33,6 +45,14 @@ const AddJob = () => {
     
     if (!user) {
       toast.error("You must be logged in to create a job");
+      navigate("/admin/login");
+      return;
+    }
+
+    // Validate input
+    const validation = jobSchema.safeParse(formData);
+    if (!validation.success) {
+      toast.error(validation.error.errors[0].message);
       return;
     }
 
@@ -45,19 +65,21 @@ const AddJob = () => {
         .single();
 
       if (!profile?.company_id) {
-        toast.error("Company not found");
+        toast.error("Company not found. Please contact support.");
+        console.error("User profile missing company_id");
         return;
       }
 
       // Get company code for job code generation
-      const { data: company } = await supabase
+      const { data: company, error: companyError } = await supabase
         .from("companies")
         .select("company_code")
         .eq("id", profile.company_id)
         .single();
 
-      if (!company) {
-        toast.error("Company not found");
+      if (companyError || !company) {
+        toast.error("Failed to retrieve company information");
+        console.error("Company fetch error:", companyError);
         return;
       }
 
@@ -104,7 +126,7 @@ const AddJob = () => {
         company_id: profile.company_id,
         customer_id: customerId,
         code: jobCodeData,
-        description: formData.description,
+        description: formData.description.trim(),
         num_dresses: parseInt(formData.numberOfDresses),
         price: parseFloat(formData.price),
         amount_paid: parseFloat(formData.amountPaid) || 0,
@@ -114,6 +136,7 @@ const AddJob = () => {
 
       if (jobError) {
         toast.error("Failed to create job");
+        console.error("Job creation error:", jobError);
         return;
       }
 

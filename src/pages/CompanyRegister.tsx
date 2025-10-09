@@ -7,6 +7,15 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { z } from "zod";
+
+const registerSchema = z.object({
+  companyName: z.string().trim().min(2, "Company name must be at least 2 characters").max(100, "Company name too long"),
+  email: z.string().trim().email("Invalid email address").max(255, "Email too long"),
+  password: z.string().min(6, "Password must be at least 6 characters").max(72, "Password too long"),
+  phone: z.string().trim().max(20, "Phone number too long").optional(),
+  companyCode: z.string().trim().max(10, "Company code too long").optional(),
+});
 
 const CompanyRegister = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -34,6 +43,14 @@ const CompanyRegister = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate input
+    const validation = registerSchema.safeParse(formData);
+    if (!validation.success) {
+      toast.error(validation.error.errors[0].message);
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -83,11 +100,21 @@ const CompanyRegister = () => {
       if (roleError) throw roleError;
 
       toast.success(
-        `Company registered successfully! Your company code is: ${companyCode}`
+        `Company registered successfully! Your company code is: ${companyCode}`,
+        { duration: 5000 }
       );
       navigate("/admin/dashboard");
     } catch (error: any) {
-      toast.error(error.message || "Failed to register company");
+      console.error("Registration error:", error);
+      
+      // Provide specific error messages
+      if (error.message?.includes("already registered")) {
+        toast.error("This email is already registered. Please login instead.");
+      } else if (error.message?.includes("unique")) {
+        toast.error("Company code already exists. Please try another one.");
+      } else {
+        toast.error(error.message || "Failed to register company. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }

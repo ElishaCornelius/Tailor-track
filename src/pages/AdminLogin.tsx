@@ -7,6 +7,12 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { z } from "zod";
+
+const loginSchema = z.object({
+  email: z.string().trim().email("Invalid email address"),
+  password: z.string().min(1, "Password is required"),
+});
 
 const AdminLogin = () => {
   const [email, setEmail] = useState("");
@@ -16,11 +22,19 @@ const AdminLogin = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate input
+    const validation = loginSchema.safeParse({ email, password });
+    if (!validation.success) {
+      toast.error(validation.error.errors[0].message);
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       const { error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim(),
         password,
       });
 
@@ -29,7 +43,13 @@ const AdminLogin = () => {
       toast.success("Login successful!");
       navigate("/admin/dashboard");
     } catch (error: any) {
-      toast.error(error.message || "Invalid credentials");
+      console.error("Login error:", error);
+      
+      if (error.message?.includes("Invalid login credentials")) {
+        toast.error("Invalid email or password. Please try again.");
+      } else {
+        toast.error(error.message || "Failed to login. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
