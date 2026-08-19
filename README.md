@@ -196,7 +196,7 @@ Role-based access control.
 
 - Node.js 18+
 - npm or bun
-- A Supabase project (or Lovable Cloud backend)
+- A Supabase project 
 
 ### Installation
 
