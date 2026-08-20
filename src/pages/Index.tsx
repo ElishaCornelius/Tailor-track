@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Scissors, UserCircle, Github, Linkedin } from "lucide-react";
+import { Scissors, UserCircle, Github, Linkedin, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
