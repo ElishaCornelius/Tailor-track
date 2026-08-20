@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Scissors, UserCircle } from "lucide-react";
+import { Scissors, UserCircle, Github, Linkedin, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
@@ -72,6 +72,40 @@ const Index = () => {
           </Card>
         </div>
       </div>
+
+      <div className="absolute bottom-4 left-4">
+        <p className="text-sm text-muted-foreground mb-2">Meet the developer</p>
+        <div className="flex items-center gap-3">
+          <a
+            href="https://github.com/ElishaCornelius"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+            aria-label="GitHub"
+          >
+            <Github className="w-5 h-5" />
+          </a>
+          <a
+            href="https://www.linkedin.com/in/elisha-cornelius-081b83230/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+            aria-label="LinkedIn"
+          >
+            <Linkedin className="w-5 h-5" />
+          </a>
+        </div>
+      </div>
+
+      <a
+        href="https://wa.me/2348102949413"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="absolute bottom-4 right-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-600 text-white hover:bg-green-700 transition-colors shadow-lg"
+      >
+        <MessageCircle className="w-5 h-5" />
+        <span className="text-sm font-medium">Need any help, chat with us</span>
+      </a>
     </div>
   );
 };
