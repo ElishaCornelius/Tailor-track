@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Scissors, UserCircle, Github, Linkedin } from "lucide-react";
+import { Scissors, UserCircle, Github, Linkedin, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
@@ -93,6 +93,15 @@ const Index = () => {
             aria-label="LinkedIn"
           >
             <Linkedin className="w-5 h-5" />
+          </a>
+          <a
+            href="https://wa.me/2348102949413"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+            aria-label="WhatsApp"
+          >
+            <MessageCircle className="w-5 h-5" />
           </a>
         </div>
       </div>
