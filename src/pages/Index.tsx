@@ -72,6 +72,30 @@ const Index = () => {
           </Card>
         </div>
       </div>
+
+      <div className="absolute bottom-4 left-4">
+        <p className="text-sm text-muted-foreground mb-2">Meet the developer</p>
+        <div className="flex items-center gap-3">
+          <a
+            href="https://github.com/ElishaCornelius"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+            aria-label="GitHub"
+          >
+            <Github className="w-5 h-5" />
+          </a>
+          <a
+            href="https://www.linkedin.com/in/elisha-cornelius-081b83230/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+            aria-label="LinkedIn"
+          >
+            <Linkedin className="w-5 h-5" />
+          </a>
+        </div>
+      </div>
     </div>
   );
 };
