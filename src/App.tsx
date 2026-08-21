@@ -24,6 +24,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <ThemeToggle />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/company/register" element={<CompanyRegister />} />
