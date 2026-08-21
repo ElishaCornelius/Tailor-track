@@ -212,6 +212,23 @@ export type Database = {
         }
         Returns: boolean
       }
+      track_job: {
+        Args: { p_code: string }
+        Returns: {
+          amount_paid: number
+          code: string
+          company_name: string
+          company_phone: string
+          completed_at: string
+          created_at: string
+          customer_name: string
+          description: string
+          num_dresses: number
+          outstanding_amount: number
+          price: number
+          status: string
+        }[]
+      }
     }
     Enums: {
       app_role: "super_admin" | "company_admin" | "customer"

@@ -6,6 +6,7 @@ import {
   TrendingUp,
   History as HistoryIcon,
   LogOut,
+  MessageCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -27,6 +28,7 @@ interface Job {
   id: string;
   code: string;
   customer_name: string;
+  customer_phone: string | null;
   description: string;
   num_dresses: number;
   price: number;
@@ -89,7 +91,7 @@ const AdminDashboard = () => {
         price,
         status,
         created_at,
-        customers (name)
+        customers (name, phone)
       `)
       .order("created_at", { ascending: false });
 
@@ -101,6 +103,7 @@ const AdminDashboard = () => {
         id: job.id,
         code: job.code,
         customer_name: job.customers?.name || "Unknown",
+        customer_phone: job.customers?.phone || null,
         description: job.description,
         num_dresses: job.num_dresses,
         price: job.price,
@@ -129,8 +132,41 @@ const AdminDashboard = () => {
           job.id === jobId ? { ...job, status: newStatus } : job
         )
       );
-      toast.success("Job status updated");
+      if (newStatus === "green") {
+        const job = jobs.find((j) => j.id === jobId);
+        if (job) notifyCustomer({ ...job, status: newStatus });
+      } else {
+        toast.success("Job status updated");
+      }
     }
+  };
+
+  const whatsappLink = (job: Job) => {
+    const digits = (job.customer_phone || "").replace(/\D/g, "");
+    if (!digits) return null;
+    const intl = digits.startsWith("0") ? `234${digits.slice(1)}` : digits;
+    const text = encodeURIComponent(
+      `Hello ${job.customer_name}, your order ${job.code} (${job.description}) is ready for pickup! - ${companyName}`,
+    );
+    return `https://wa.me/${intl}?text=${text}`;
+  };
+
+  const notifyCustomer = (job: Job) => {
+    const link = whatsappLink(job);
+    if (!link) {
+      toast.success("Job marked as completed", {
+        description: "No phone number on file to send a WhatsApp alert.",
+      });
+      return;
+    }
+    toast.success("Job completed — notify the customer", {
+      description: `Send \u201cready for pickup\u201d to ${job.customer_name}`,
+      duration: 10000,
+      action: {
+        label: "WhatsApp",
+        onClick: () => window.open(link, "_blank", "noopener,noreferrer"),
+      },
+    });
   };
 
   if (authLoading || loading) {
@@ -273,7 +309,21 @@ const AdminDashboard = () => {
                       </p>
                     </div>
                     {job.status === "green" ? (
-                      <StatusBadge status={job.status} />
+                      <div className="flex items-center gap-2">
+                        <StatusBadge status={job.status} />
+                        {whatsappLink(job) && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              window.open(whatsappLink(job) as string, "_blank", "noopener,noreferrer")
+                            }
+                          >
+                            <MessageCircle className="w-4 h-4 mr-1" />
+                            Notify
+                          </Button>
+                        )}
+                      </div>
                     ) : (
                       <Select
                         value={job.status}
