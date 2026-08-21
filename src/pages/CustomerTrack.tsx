@@ -1,11 +1,13 @@
-import { useState } from "react";
-import { ArrowLeft, Search, Package } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowLeft, Search, Package, Bell, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Link } from "react-router-dom";
 import StatusBadge from "@/components/StatusBadge";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 type JobStatus = "red" | "yellow" | "green";
 
@@ -16,47 +18,106 @@ interface JobDetails {
   numberOfDresses: number;
   status: JobStatus;
   createdAt: string;
+  companyName: string;
+  companyPhone: string | null;
 }
+
+const STORAGE_KEY = "tt_tracked_jobs";
+const NOTIFIED_KEY = "tt_notified_jobs";
+
+const readList = (key: string): string[] => {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as string[]) : [];
+  } catch {
+    return [];
+  }
+};
+
+const addToList = (key: string, value: string) => {
+  const list = readList(key);
+  if (!list.includes(value)) {
+    localStorage.setItem(key, JSON.stringify([value, ...list].slice(0, 20)));
+  }
+};
+
+const fetchJob = async (code: string): Promise<JobDetails | null> => {
+  const { data, error } = await supabase.rpc("track_job", { p_code: code });
+  if (error) throw error;
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) return null;
+  return {
+    code: row.code,
+    customerName: row.customer_name,
+    description: row.description,
+    numberOfDresses: row.num_dresses,
+    status: row.status as JobStatus,
+    createdAt: row.created_at,
+    companyName: row.company_name,
+    companyPhone: row.company_phone,
+  };
+};
 
 const CustomerTrack = () => {
   const [jobCode, setJobCode] = useState("");
   const [jobDetails, setJobDetails] = useState<JobDetails | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [notFound, setNotFound] = useState(false);
+  const [pastJobs, setPastJobs] = useState<JobDetails[]>([]);
 
-  const handleSearch = (e: React.FormEvent) => {
+  // In-app notifications: check saved codes and alert on newly completed jobs
+  useEffect(() => {
+    const codes = readList(STORAGE_KEY);
+    if (codes.length === 0) return;
+
+    (async () => {
+      const results: JobDetails[] = [];
+      for (const code of codes) {
+        try {
+          const job = await fetchJob(code);
+          if (job) {
+            results.push(job);
+            if (job.status === "green" && !readList(NOTIFIED_KEY).includes(job.code)) {
+              addToList(NOTIFIED_KEY, job.code);
+              toast.success("Your order is ready for pickup!", {
+                description: `${job.code} — ${job.description}`,
+                duration: 8000,
+              });
+            }
+          }
+        } catch {
+          /* ignore */
+        }
+      }
+      setPastJobs(results);
+    })();
+  }, []);
+
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSearching(true);
     setNotFound(false);
 
-    // Simulate API call
-    setTimeout(() => {
-      if (jobCode.toUpperCase() === "TT-001") {
-        setJobDetails({
-          code: "TT-001",
-          customerName: "Amaka Johnson",
-          description: "2 Ankara gowns",
-          numberOfDresses: 2,
-          status: "green",
-          createdAt: new Date().toISOString(),
-        });
-        setNotFound(false);
-      } else if (jobCode.toUpperCase() === "TT-002") {
-        setJobDetails({
-          code: "TT-002",
-          customerName: "Chidinma Okafor",
-          description: "1 wedding gown, 2 bridesmaid dresses",
-          numberOfDresses: 3,
-          status: "yellow",
-          createdAt: new Date().toISOString(),
-        });
-        setNotFound(false);
-      } else {
+    try {
+      const job = await fetchJob(jobCode);
+      if (!job) {
         setJobDetails(null);
         setNotFound(true);
+      } else {
+        setJobDetails(job);
+        addToList(STORAGE_KEY, job.code);
+        setPastJobs((prev) => [job, ...prev.filter((j) => j.code !== job.code)]);
+        if (job.status === "green") {
+          addToList(NOTIFIED_KEY, job.code);
+          toast.success("Your order is ready for pickup!");
+        }
       }
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not look up that job code. Please try again.");
+    } finally {
       setIsSearching(false);
-    }, 800);
+    }
   };
 
   const getStatusMessage = (status: JobStatus) => {
@@ -70,6 +131,15 @@ const CustomerTrack = () => {
       default:
         return "";
     }
+  };
+
+  const whatsappLink = (job: JobDetails) => {
+    const digits = (job.companyPhone || "").replace(/\D/g, "");
+    if (!digits) return null;
+    const text = encodeURIComponent(
+      `Hello ${job.companyName}, I'd like to ask about my order ${job.code} (${job.description}).`,
+    );
+    return `https://wa.me/${digits}?text=${text}`;
   };
 
   return (
@@ -99,7 +169,7 @@ const CustomerTrack = () => {
               <div className="flex gap-2">
                 <Input
                   id="jobCode"
-                  placeholder="e.g., TT-001"
+                  placeholder="e.g., BEL-077-001"
                   value={jobCode}
                   onChange={(e) => setJobCode(e.target.value)}
                   className="uppercase"
@@ -134,6 +204,7 @@ const CustomerTrack = () => {
               <div>
                 <h2 className="text-2xl font-bold">{jobDetails.customerName}</h2>
                 <p className="text-sm text-muted-foreground">Job Code: {jobDetails.code}</p>
+                <p className="text-sm text-muted-foreground">{jobDetails.companyName}</p>
               </div>
               <StatusBadge status={jobDetails.status} size="lg" />
             </div>
@@ -172,15 +243,50 @@ const CustomerTrack = () => {
             >
               <p className="text-sm font-medium">{getStatusMessage(jobDetails.status)}</p>
             </div>
+
+            {whatsappLink(jobDetails) && (
+              <a
+                href={whatsappLink(jobDetails) as string}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 inline-flex"
+              >
+                <Button variant="outline">
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  Chat with {jobDetails.companyName}
+                </Button>
+              </a>
+            )}
           </Card>
         )}
 
-        <div className="mt-6 text-center">
-          <p className="text-sm text-muted-foreground">
-            Try demo codes: <code className="bg-muted px-2 py-1 rounded mx-1">TT-001</code> or
-            <code className="bg-muted px-2 py-1 rounded mx-1">TT-002</code>
-          </p>
-        </div>
+        {pastJobs.length > 0 && (
+          <Card className="p-6 mt-8">
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <Bell className="w-5 h-5 text-primary" />
+              Your Past Jobs
+            </h2>
+            <div className="space-y-3">
+              {pastJobs.map((job) => (
+                <button
+                  key={job.code}
+                  onClick={() => {
+                    setJobCode(job.code);
+                    setJobDetails(job);
+                    setNotFound(false);
+                  }}
+                  className="w-full text-left p-3 border rounded-lg hover:bg-accent/10 transition-colors flex items-center justify-between gap-4"
+                >
+                  <span>
+                    <span className="font-medium block">{job.code}</span>
+                    <span className="text-sm text-muted-foreground">{job.description}</span>
+                  </span>
+                  <StatusBadge status={job.status} size="sm" />
+                </button>
+              ))}
+            </div>
+          </Card>
+        )}
       </main>
     </div>
   );
