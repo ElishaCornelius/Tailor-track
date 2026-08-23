@@ -44,6 +44,7 @@ All colors MUST be HSL.
     
     --gradient-primary: linear-gradient(135deg, hsl(270 60% 50%), hsl(290 70% 60%));
     --gradient-secondary: linear-gradient(135deg, hsl(45 90% 60%), hsl(35 95% 55%));
+    --gradient-page: linear-gradient(135deg, hsl(270 50% 92%), hsl(0 0% 100%));
     --shadow-luxury: 0 20px 40px -15px hsl(270 60% 50% / 0.3);
     --shadow-card: 0 4px 12px -2px hsl(280 20% 10% / 0.08);
 
@@ -93,6 +94,7 @@ All colors MUST be HSL.
     --input: 280 30% 18%;
     --ring: 270 60% 55%;
     
+    --gradient-page: linear-gradient(135deg, hsl(270 50% 28%), hsl(280 40% 6%));
     --shadow-luxury: 0 20px 40px -15px hsl(270 60% 30% / 0.5);
     --shadow-card: 0 4px 12px -2px hsl(0 0% 0% / 0.3);
     --sidebar-background: 240 5.9% 10%;
