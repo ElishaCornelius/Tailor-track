@@ -5,8 +5,8 @@ import { Card } from "@/components/ui/card";
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-background flex items-center justify-center p-4">
-      <div className="max-w-6xl w-full">
+    <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-background flex flex-col p-4 pt-20">
+      <div className="max-w-6xl w-full mx-auto flex-1 flex flex-col justify-center">
         <div className="text-center mb-12 animate-fade-in">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-6">
             <Scissors className="w-10 h-10 text-primary" />
@@ -19,7 +19,7 @@ const Index = () => {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 md:gap-8">
           <Card className="p-8 hover:shadow-luxury transition-all duration-300 group">
             <div className="text-center">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4 group-hover:bg-primary/20 transition-colors">
@@ -73,9 +73,10 @@ const Index = () => {
         </div>
       </div>
 
-      <div className="absolute bottom-4 left-4">
+      <footer className="max-w-6xl w-full mx-auto mt-12 pt-6 border-t flex flex-col sm:flex-row items-center sm:items-end justify-between gap-4">
+        <div className="text-center sm:text-left">
         <p className="text-sm text-muted-foreground mb-2">Meet the developer</p>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-center sm:justify-start gap-3">
           <a
             href="https://github.com/ElishaCornelius"
             target="_blank"
@@ -95,17 +96,18 @@ const Index = () => {
             <Linkedin className="w-5 h-5" />
           </a>
         </div>
-      </div>
+        </div>
 
-      <a
-        href="https://wa.me/2348102949413"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="absolute bottom-4 right-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-600 text-white hover:bg-green-700 transition-colors shadow-lg"
-      >
-        <MessageCircle className="w-5 h-5" />
-        <span className="text-sm font-medium">Need any help, chat with us</span>
-      </a>
+        <a
+          href="https://wa.me/2348102949413"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-600 text-primary-foreground hover:bg-green-700 transition-colors shadow-lg"
+        >
+          <MessageCircle className="w-5 h-5 shrink-0" />
+          <span className="text-sm font-medium">Need any help, chat with us</span>
+        </a>
+      </footer>
     </div>
   );
 };
