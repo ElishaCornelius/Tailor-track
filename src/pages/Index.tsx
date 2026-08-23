@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-background flex flex-col p-4 pt-20">
+    <div className="min-h-screen flex flex-col p-4 pt-20" style={{ background: "var(--gradient-page)" }}>
       <div className="max-w-6xl w-full mx-auto flex-1 flex flex-col justify-center">
         <div className="text-center mb-12 animate-fade-in">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-6">
