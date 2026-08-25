@@ -210,7 +210,7 @@ const AddJob = () => {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="numberOfDresses">Number of Dresses *</Label>
+                <Label htmlFor="numberOfDresses">Number of Items *</Label>
                 <Input
                   id="numberOfDresses"
                   type="number"
