@@ -13,6 +13,7 @@ import AddJob from "./pages/AddJob";
 import Rankings from "./pages/Rankings";
 import History from "./pages/History";
 import CustomerTrack from "./pages/CustomerTrack";
+import Notifications from "./pages/Notifications";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
