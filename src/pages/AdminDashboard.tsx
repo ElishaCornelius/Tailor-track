@@ -427,47 +427,73 @@ const AdminDashboard = () => {
                         Code: {job.code}
                       </p>
                     </div>
-                    {job.status === "green" ? (
-                      <div className="flex items-center gap-2">
-                        <StatusBadge status={job.status} />
-                        {whatsappLink(job) && (
+                    <div className="flex items-center gap-2">
+                      {job.status === "green" ? (
+                        <div className="flex items-center gap-2">
+                          <StatusBadge status={job.status} />
+                          {whatsappLink(job) && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() =>
+                                window.open(whatsappLink(job) as string, "_blank", "noopener,noreferrer")
+                              }
+                            >
+                              <MessageCircle className="w-4 h-4 mr-1" />
+                              Notify
+                            </Button>
+                          )}
+                        </div>
+                      ) : (
+                        <Select
+                          value={job.status}
+                          onValueChange={(value) =>
+                            handleStatusChange(job.id, value as JobStatus)
+                          }
+                        >
+                          <SelectTrigger className="w-[140px]">
+                            <SelectValue>
+                              <StatusBadge status={job.status} size="sm" />
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="red">
+                              <StatusBadge status="red" size="sm" />
+                            </SelectItem>
+                            <SelectItem value="yellow">
+                              <StatusBadge status="yellow" size="sm" />
+                            </SelectItem>
+                            <SelectItem value="green">
+                              <StatusBadge status="green" size="sm" />
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
                           <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() =>
-                              window.open(whatsappLink(job) as string, "_blank", "noopener,noreferrer")
-                            }
+                            variant="ghost"
+                            size="icon"
+                            aria-label={`Options for job ${job.code}`}
                           >
-                            <MessageCircle className="w-4 h-4 mr-1" />
-                            Notify
+                            <MoreVertical className="w-4 h-4" />
                           </Button>
-                        )}
-                      </div>
-                    ) : (
-                      <Select
-                        value={job.status}
-                        onValueChange={(value) =>
-                          handleStatusChange(job.id, value as JobStatus)
-                        }
-                      >
-                        <SelectTrigger className="w-[140px]">
-                          <SelectValue>
-                            <StatusBadge status={job.status} size="sm" />
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="red">
-                            <StatusBadge status="red" size="sm" />
-                          </SelectItem>
-                          <SelectItem value="yellow">
-                            <StatusBadge status="yellow" size="sm" />
-                          </SelectItem>
-                          <SelectItem value="green">
-                            <StatusBadge status="green" size="sm" />
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => requestEdit(job)}>
+                            <Pencil className="w-4 h-4 mr-2" />
+                            Edit job
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => requestDelete(job)}
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete job
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
                   <p className="text-sm mb-2">{job.description}</p>
                   <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
