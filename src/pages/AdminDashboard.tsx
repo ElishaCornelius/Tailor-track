@@ -67,6 +67,19 @@ const AdminDashboard = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [companyName, setCompanyName] = useState("");
+  const [pendingJob, setPendingJob] = useState<Job | null>(null);
+  const [pendingAction, setPendingAction] = useState<"edit" | "delete">("edit");
+  const [passwordOpen, setPasswordOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editForm, setEditForm] = useState({
+    description: "",
+    num_dresses: "",
+    price: "",
+    amount_paid: "",
+    outstanding_amount: "",
+    status: "red" as JobStatus,
+  });
 
   useEffect(() => {
     if (!authLoading && !user) {
