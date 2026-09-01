@@ -392,6 +392,12 @@ const AdminDashboard = () => {
               View History
             </Button>
           </Link>
+          <Link to="/admin/notifications">
+            <Button variant="outline" className="w-full" size="lg">
+              <Bell className="w-5 h-5 mr-2" />
+              Notifications
+            </Button>
+          </Link>
         </div>
 
         {/* Jobs List */}
