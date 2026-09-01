@@ -509,6 +509,122 @@ const AdminDashboard = () => {
           )}
         </Card>
       </div>
+
+      <PasswordConfirmDialog
+        open={passwordOpen}
+        onOpenChange={setPasswordOpen}
+        actionLabel={`${pendingAction === "edit" ? "Edit" : "Delete"} job ${pendingJob?.code ?? ""}`}
+        description={
+          pendingAction === "edit"
+            ? "Editing a job requires your admin password."
+            : "Deleting a job requires your admin password. This cannot be undone."
+        }
+        onConfirmed={handleConfirmed}
+      />
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit job {pendingJob?.code}</DialogTitle>
+            <DialogDescription>Correct any mistakes in this job.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="job-description">Job description</Label>
+              <Textarea
+                id="job-description"
+                value={editForm.description}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, description: e.target.value })
+                }
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="job-items">Number of Items</Label>
+                <Input
+                  id="job-items"
+                  type="number"
+                  value={editForm.num_dresses}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, num_dresses: e.target.value })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="job-price">Price (₦)</Label>
+                <Input
+                  id="job-price"
+                  type="number"
+                  value={editForm.price}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, price: e.target.value })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="job-paid">Amount paid (₦)</Label>
+                <Input
+                  id="job-paid"
+                  type="number"
+                  value={editForm.amount_paid}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, amount_paid: e.target.value })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="job-outstanding">Outstanding (₦)</Label>
+                <Input
+                  id="job-outstanding"
+                  type="number"
+                  value={editForm.outstanding_amount}
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      outstanding_amount: e.target.value,
+                    })
+                  }
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <Select
+                value={editForm.status}
+                onValueChange={(value) =>
+                  setEditForm({ ...editForm, status: value as JobStatus })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue>
+                    <StatusBadge status={editForm.status} size="sm" />
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="red">
+                    <StatusBadge status="red" size="sm" />
+                  </SelectItem>
+                  <SelectItem value="yellow">
+                    <StatusBadge status="yellow" size="sm" />
+                  </SelectItem>
+                  <SelectItem value="green">
+                    <StatusBadge status="green" size="sm" />
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={saveJob} disabled={saving}>
+              {saving ? "Saving..." : "Save changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
