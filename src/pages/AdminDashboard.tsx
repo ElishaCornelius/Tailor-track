@@ -114,6 +114,8 @@ const AdminDashboard = () => {
         description,
         num_dresses,
         price,
+        amount_paid,
+        outstanding_amount,
         status,
         created_at,
         customers (name, phone)
@@ -131,7 +133,9 @@ const AdminDashboard = () => {
         customer_phone: job.customers?.phone || null,
         description: job.description,
         num_dresses: job.num_dresses,
-        price: job.price,
+        price: Number(job.price ?? 0),
+        amount_paid: Number(job.amount_paid ?? 0),
+        outstanding_amount: Number(job.outstanding_amount ?? 0),
         status: job.status as JobStatus,
         created_at: job.created_at,
       }));
