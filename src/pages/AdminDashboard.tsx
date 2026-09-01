@@ -198,6 +198,77 @@ const AdminDashboard = () => {
     });
   };
 
+  const requestEdit = (job: Job) => {
+    setPendingJob(job);
+    setPendingAction("edit");
+    setEditForm({
+      description: job.description,
+      num_dresses: String(job.num_dresses),
+      price: String(job.price),
+      amount_paid: String(job.amount_paid),
+      outstanding_amount: String(job.outstanding_amount),
+      status: job.status,
+    });
+    setPasswordOpen(true);
+  };
+
+  const requestDelete = (job: Job) => {
+    setPendingJob(job);
+    setPendingAction("delete");
+    setPasswordOpen(true);
+  };
+
+  const handleConfirmed = async () => {
+    if (!pendingJob) return;
+    if (pendingAction === "edit") {
+      setEditOpen(true);
+      return;
+    }
+
+    const { error } = await supabase.from("jobs").delete().eq("id", pendingJob.id);
+    if (error) {
+      toast.error("Failed to delete job");
+      return;
+    }
+    toast.success(`Job ${pendingJob.code} deleted`);
+    setJobs((prev) => prev.filter((j) => j.id !== pendingJob.id));
+    setPendingJob(null);
+  };
+
+  const saveJob = async () => {
+    if (!pendingJob) return;
+    if (editForm.description.trim().length < 5) {
+      toast.error("Description must be at least 5 characters");
+      return;
+    }
+    setSaving(true);
+    const { error } = await supabase
+      .from("jobs")
+      .update({
+        description: editForm.description.trim(),
+        num_dresses: Number(editForm.num_dresses) || 1,
+        price: Number(editForm.price) || 0,
+        amount_paid: Number(editForm.amount_paid) || 0,
+        outstanding_amount: Number(editForm.outstanding_amount) || 0,
+        status: editForm.status,
+        completed_at:
+          editForm.status === "green" ? new Date().toISOString() : null,
+      })
+      .eq("id", pendingJob.id);
+    setSaving(false);
+
+    if (error) {
+      toast.error("Failed to update job");
+      return;
+    }
+    toast.success("Job updated");
+    setEditOpen(false);
+    setPendingJob(null);
+    fetchJobs();
+  };
+
+
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-background flex items-center justify-center">
