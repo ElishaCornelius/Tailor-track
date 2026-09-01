@@ -7,10 +7,32 @@ import {
   History as HistoryIcon,
   LogOut,
   MessageCircle,
+  MoreVertical,
+  Pencil,
+  Trash2,
+  Bell,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import StatusBadge from "@/components/StatusBadge";
+import PasswordConfirmDialog from "@/components/PasswordConfirmDialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -32,9 +54,12 @@ interface Job {
   description: string;
   num_dresses: number;
   price: number;
+  amount_paid: number;
+  outstanding_amount: number;
   status: JobStatus;
   created_at: string;
 }
+
 
 const AdminDashboard = () => {
   const { user, loading: authLoading, signOut } = useAuth();
