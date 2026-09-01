@@ -7,10 +7,32 @@ import {
   History as HistoryIcon,
   LogOut,
   MessageCircle,
+  MoreVertical,
+  Pencil,
+  Trash2,
+  Bell,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import StatusBadge from "@/components/StatusBadge";
+import PasswordConfirmDialog from "@/components/PasswordConfirmDialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -32,9 +54,12 @@ interface Job {
   description: string;
   num_dresses: number;
   price: number;
+  amount_paid: number;
+  outstanding_amount: number;
   status: JobStatus;
   created_at: string;
 }
+
 
 const AdminDashboard = () => {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -42,6 +67,19 @@ const AdminDashboard = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [companyName, setCompanyName] = useState("");
+  const [pendingJob, setPendingJob] = useState<Job | null>(null);
+  const [pendingAction, setPendingAction] = useState<"edit" | "delete">("edit");
+  const [passwordOpen, setPasswordOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editForm, setEditForm] = useState({
+    description: "",
+    num_dresses: "",
+    price: "",
+    amount_paid: "",
+    outstanding_amount: "",
+    status: "red" as JobStatus,
+  });
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -89,6 +127,8 @@ const AdminDashboard = () => {
         description,
         num_dresses,
         price,
+        amount_paid,
+        outstanding_amount,
         status,
         created_at,
         customers (name, phone)
@@ -106,7 +146,9 @@ const AdminDashboard = () => {
         customer_phone: job.customers?.phone || null,
         description: job.description,
         num_dresses: job.num_dresses,
-        price: job.price,
+        price: Number(job.price ?? 0),
+        amount_paid: Number(job.amount_paid ?? 0),
+        outstanding_amount: Number(job.outstanding_amount ?? 0),
         status: job.status as JobStatus,
         created_at: job.created_at,
       }));
@@ -168,6 +210,77 @@ const AdminDashboard = () => {
       },
     });
   };
+
+  const requestEdit = (job: Job) => {
+    setPendingJob(job);
+    setPendingAction("edit");
+    setEditForm({
+      description: job.description,
+      num_dresses: String(job.num_dresses),
+      price: String(job.price),
+      amount_paid: String(job.amount_paid),
+      outstanding_amount: String(job.outstanding_amount),
+      status: job.status,
+    });
+    setPasswordOpen(true);
+  };
+
+  const requestDelete = (job: Job) => {
+    setPendingJob(job);
+    setPendingAction("delete");
+    setPasswordOpen(true);
+  };
+
+  const handleConfirmed = async () => {
+    if (!pendingJob) return;
+    if (pendingAction === "edit") {
+      setEditOpen(true);
+      return;
+    }
+
+    const { error } = await supabase.from("jobs").delete().eq("id", pendingJob.id);
+    if (error) {
+      toast.error("Failed to delete job");
+      return;
+    }
+    toast.success(`Job ${pendingJob.code} deleted`);
+    setJobs((prev) => prev.filter((j) => j.id !== pendingJob.id));
+    setPendingJob(null);
+  };
+
+  const saveJob = async () => {
+    if (!pendingJob) return;
+    if (editForm.description.trim().length < 5) {
+      toast.error("Description must be at least 5 characters");
+      return;
+    }
+    setSaving(true);
+    const { error } = await supabase
+      .from("jobs")
+      .update({
+        description: editForm.description.trim(),
+        num_dresses: Number(editForm.num_dresses) || 1,
+        price: Number(editForm.price) || 0,
+        amount_paid: Number(editForm.amount_paid) || 0,
+        outstanding_amount: Number(editForm.outstanding_amount) || 0,
+        status: editForm.status,
+        completed_at:
+          editForm.status === "green" ? new Date().toISOString() : null,
+      })
+      .eq("id", pendingJob.id);
+    setSaving(false);
+
+    if (error) {
+      toast.error("Failed to update job");
+      return;
+    }
+    toast.success("Job updated");
+    setEditOpen(false);
+    setPendingJob(null);
+    fetchJobs();
+  };
+
+
 
   if (authLoading || loading) {
     return (
@@ -260,7 +373,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* Action Buttons */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <Link to="/admin/add-job">
             <Button className="w-full" size="lg">
               <Plus className="w-5 h-5 mr-2" />
@@ -277,6 +390,12 @@ const AdminDashboard = () => {
             <Button variant="outline" className="w-full" size="lg">
               <HistoryIcon className="w-5 h-5 mr-2" />
               View History
+            </Button>
+          </Link>
+          <Link to="/admin/notifications">
+            <Button variant="outline" className="w-full" size="lg">
+              <Bell className="w-5 h-5 mr-2" />
+              Notifications
             </Button>
           </Link>
         </div>
@@ -308,47 +427,73 @@ const AdminDashboard = () => {
                         Code: {job.code}
                       </p>
                     </div>
-                    {job.status === "green" ? (
-                      <div className="flex items-center gap-2">
-                        <StatusBadge status={job.status} />
-                        {whatsappLink(job) && (
+                    <div className="flex items-center gap-2">
+                      {job.status === "green" ? (
+                        <div className="flex items-center gap-2">
+                          <StatusBadge status={job.status} />
+                          {whatsappLink(job) && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() =>
+                                window.open(whatsappLink(job) as string, "_blank", "noopener,noreferrer")
+                              }
+                            >
+                              <MessageCircle className="w-4 h-4 mr-1" />
+                              Notify
+                            </Button>
+                          )}
+                        </div>
+                      ) : (
+                        <Select
+                          value={job.status}
+                          onValueChange={(value) =>
+                            handleStatusChange(job.id, value as JobStatus)
+                          }
+                        >
+                          <SelectTrigger className="w-[140px]">
+                            <SelectValue>
+                              <StatusBadge status={job.status} size="sm" />
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="red">
+                              <StatusBadge status="red" size="sm" />
+                            </SelectItem>
+                            <SelectItem value="yellow">
+                              <StatusBadge status="yellow" size="sm" />
+                            </SelectItem>
+                            <SelectItem value="green">
+                              <StatusBadge status="green" size="sm" />
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
                           <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() =>
-                              window.open(whatsappLink(job) as string, "_blank", "noopener,noreferrer")
-                            }
+                            variant="ghost"
+                            size="icon"
+                            aria-label={`Options for job ${job.code}`}
                           >
-                            <MessageCircle className="w-4 h-4 mr-1" />
-                            Notify
+                            <MoreVertical className="w-4 h-4" />
                           </Button>
-                        )}
-                      </div>
-                    ) : (
-                      <Select
-                        value={job.status}
-                        onValueChange={(value) =>
-                          handleStatusChange(job.id, value as JobStatus)
-                        }
-                      >
-                        <SelectTrigger className="w-[140px]">
-                          <SelectValue>
-                            <StatusBadge status={job.status} size="sm" />
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="red">
-                            <StatusBadge status="red" size="sm" />
-                          </SelectItem>
-                          <SelectItem value="yellow">
-                            <StatusBadge status="yellow" size="sm" />
-                          </SelectItem>
-                          <SelectItem value="green">
-                            <StatusBadge status="green" size="sm" />
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => requestEdit(job)}>
+                            <Pencil className="w-4 h-4 mr-2" />
+                            Edit job
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => requestDelete(job)}
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete job
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
                   <p className="text-sm mb-2">{job.description}</p>
                   <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
@@ -364,6 +509,122 @@ const AdminDashboard = () => {
           )}
         </Card>
       </div>
+
+      <PasswordConfirmDialog
+        open={passwordOpen}
+        onOpenChange={setPasswordOpen}
+        actionLabel={`${pendingAction === "edit" ? "Edit" : "Delete"} job ${pendingJob?.code ?? ""}`}
+        description={
+          pendingAction === "edit"
+            ? "Editing a job requires your admin password."
+            : "Deleting a job requires your admin password. This cannot be undone."
+        }
+        onConfirmed={handleConfirmed}
+      />
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit job {pendingJob?.code}</DialogTitle>
+            <DialogDescription>Correct any mistakes in this job.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="job-description">Job description</Label>
+              <Textarea
+                id="job-description"
+                value={editForm.description}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, description: e.target.value })
+                }
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="job-items">Number of Items</Label>
+                <Input
+                  id="job-items"
+                  type="number"
+                  value={editForm.num_dresses}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, num_dresses: e.target.value })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="job-price">Price (₦)</Label>
+                <Input
+                  id="job-price"
+                  type="number"
+                  value={editForm.price}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, price: e.target.value })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="job-paid">Amount paid (₦)</Label>
+                <Input
+                  id="job-paid"
+                  type="number"
+                  value={editForm.amount_paid}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, amount_paid: e.target.value })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="job-outstanding">Outstanding (₦)</Label>
+                <Input
+                  id="job-outstanding"
+                  type="number"
+                  value={editForm.outstanding_amount}
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      outstanding_amount: e.target.value,
+                    })
+                  }
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <Select
+                value={editForm.status}
+                onValueChange={(value) =>
+                  setEditForm({ ...editForm, status: value as JobStatus })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue>
+                    <StatusBadge status={editForm.status} size="sm" />
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="red">
+                    <StatusBadge status="red" size="sm" />
+                  </SelectItem>
+                  <SelectItem value="yellow">
+                    <StatusBadge status="yellow" size="sm" />
+                  </SelectItem>
+                  <SelectItem value="green">
+                    <StatusBadge status="green" size="sm" />
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={saveJob} disabled={saving}>
+              {saving ? "Saving..." : "Save changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
