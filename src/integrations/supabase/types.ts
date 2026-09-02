@@ -97,6 +97,62 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_accounts: {
+        Row: {
+          created_at: string
+          id: string
+          passcode_hash: string
+          phone: string
+          phone_normalized: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          passcode_hash: string
+          phone: string
+          phone_normalized: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          passcode_hash?: string
+          phone?: string
+          phone_normalized?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      customer_sessions: {
+        Row: {
+          account_id: string
+          created_at: string
+          expires_at: string
+          token: string
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          expires_at?: string
+          token?: string
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          expires_at?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_sessions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "customer_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           company_id: string
@@ -253,6 +309,39 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      customer_account_exists: { Args: { p_phone: string }; Returns: boolean }
+      customer_jobs: {
+        Args: { p_token: string }
+        Returns: {
+          amount_paid: number
+          code: string
+          company_name: string
+          company_phone: string
+          completed_at: string
+          created_at: string
+          customer_name: string
+          description: string
+          num_dresses: number
+          outstanding_amount: number
+          price: number
+          status: string
+        }[]
+      }
+      customer_login: {
+        Args: { p_passcode: string; p_phone: string }
+        Returns: string
+      }
+      customer_logout: { Args: { p_token: string }; Returns: undefined }
+      customer_me: {
+        Args: { p_token: string }
+        Returns: {
+          phone: string
+        }[]
+      }
+      customer_register: {
+        Args: { p_passcode: string; p_phone: string }
+        Returns: string
+      }
       generate_job_code: { Args: { company_code: string }; Returns: string }
       get_user_company_id: { Args: { _user_id: string }; Returns: string }
       has_role: {
@@ -262,6 +351,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      normalize_phone: { Args: { p_phone: string }; Returns: string }
       track_job: {
         Args: { p_code: string }
         Returns: {
