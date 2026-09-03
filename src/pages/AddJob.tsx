@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,19 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { z } from "zod";
+import JobQRCode from "@/components/JobQRCode";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+interface CustomerOption {
+  id: string;
+  name: string;
+  phone: string | null;
+}
 
 const jobSchema = z.object({
   customerName: z.string().trim().min(2, "Customer name must be at least 2 characters").max(100, "Name too long"),
@@ -39,6 +52,55 @@ const AddJob = () => {
     outstandingAmount: "",
     status: "red" as JobStatus,
   });
+  const [customers, setCustomers] = useState<CustomerOption[]>([]);
+  const [companyId, setCompanyId] = useState<string | null>(null);
+  const [matchedCustomerId, setMatchedCustomerId] = useState<string | null>(null);
+  const [showNameSuggestions, setShowNameSuggestions] = useState(false);
+  const [showPhoneSuggestions, setShowPhoneSuggestions] = useState(false);
+  const [createdCode, setCreatedCode] = useState<string | null>(null);
+  const nameRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("company_id")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (!profile?.company_id) return;
+      setCompanyId(profile.company_id);
+      const { data } = await supabase
+        .from("customers")
+        .select("id, name, phone")
+        .eq("company_id", profile.company_id)
+        .order("name");
+      setCustomers((data ?? []) as CustomerOption[]);
+    })();
+  }, [user]);
+
+  const nameMatches = useMemo(() => {
+    const q = formData.customerName.trim().toLowerCase();
+    if (!q) return [];
+    return customers.filter((c) => c.name.toLowerCase().includes(q)).slice(0, 6);
+  }, [customers, formData.customerName]);
+
+  const phoneMatches = useMemo(() => {
+    const q = formData.customerPhone.replace(/\D/g, "");
+    if (!q) return [];
+    return customers
+      .filter((c) => (c.phone ?? "").replace(/\D/g, "").includes(q))
+      .slice(0, 6);
+  }, [customers, formData.customerPhone]);
+
+  const selectCustomer = (c: CustomerOption) => {
+    setFormData((prev) => ({ ...prev, customerName: c.name, customerPhone: c.phone ?? "" }));
+    setMatchedCustomerId(c.id);
+    setShowNameSuggestions(false);
+    setShowPhoneSuggestions(false);
+  };
+
+  const showPhoneField = formData.customerName.trim().length > 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,7 +147,9 @@ const AddJob = () => {
 
       // Check if customer exists, if not create
       let customerId: string;
-      const { data: existingCustomer } = await supabase
+      const { data: existingCustomer } = matchedCustomerId
+        ? { data: { id: matchedCustomerId } }
+        : await supabase
         .from("customers")
         .select("id")
         .eq("company_id", profile.company_id)
@@ -140,17 +204,8 @@ const AddJob = () => {
         return;
       }
 
-      toast.success(
-        <div>
-          <p className="font-semibold">Job created successfully!</p>
-          <p className="text-sm mt-1">
-            Job Code: <span className="font-mono font-bold">{jobCodeData}</span>
-          </p>
-        </div>,
-        { duration: 5000 }
-      );
-
-      navigate("/admin/dashboard");
+      toast.success("Job created successfully!");
+      setCreatedCode(jobCodeData as string);
     } catch (error) {
       console.error("Error creating job:", error);
       toast.error("An error occurred while creating the job");
@@ -173,28 +228,87 @@ const AddJob = () => {
           <h1 className="text-3xl font-bold mb-6">Add New Job</h1>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
+            <div className="space-y-2 relative" ref={nameRef}>
               <Label htmlFor="customerName">Customer Name *</Label>
               <Input
                 id="customerName"
-                placeholder="Enter customer name"
+                autoComplete="off"
+                placeholder="Start typing a name..."
                 value={formData.customerName}
-                onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, customerName: e.target.value });
+                  setMatchedCustomerId(null);
+                  setShowNameSuggestions(true);
+                }}
+                onFocus={() => setShowNameSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowNameSuggestions(false), 150)}
                 required
               />
+              {showNameSuggestions && nameMatches.length > 0 && (
+                <ul className="absolute z-20 left-0 right-0 top-full mt-1 bg-popover border rounded-md shadow-lg overflow-hidden">
+                  {nameMatches.map((c) => (
+                    <li key={c.id}>
+                      <button
+                        type="button"
+                        className="w-full text-left px-3 py-2 hover:bg-accent"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => selectCustomer(c)}
+                      >
+                        <span className="font-medium">{c.name}</span>
+                        <span className="text-sm text-muted-foreground ml-2">{c.phone}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="customerPhone">Customer Phone *</Label>
-              <Input
-                id="customerPhone"
-                type="tel"
-                placeholder="+234 801 234 5678"
-                value={formData.customerPhone}
-                onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
-                required
-              />
-            </div>
+            {showPhoneField && (
+              <div className="space-y-2 relative animate-fade-in">
+                <Label htmlFor="customerPhone">Customer Phone *</Label>
+                <Input
+                  id="customerPhone"
+                  type="tel"
+                  autoComplete="off"
+                  placeholder="+234 801 234 5678"
+                  value={formData.customerPhone}
+                  onChange={(e) => {
+                    setFormData({ ...formData, customerPhone: e.target.value });
+                    setMatchedCustomerId(null);
+                    setShowPhoneSuggestions(true);
+                  }}
+                  onFocus={() => setShowPhoneSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowPhoneSuggestions(false), 150)}
+                  required
+                />
+                {matchedCustomerId ? (
+                  <p className="text-xs text-muted-foreground">
+                    Existing customer — this job will be added to their record.
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    New customer — their full details will be saved.
+                  </p>
+                )}
+                {showPhoneSuggestions && phoneMatches.length > 0 && (
+                  <ul className="absolute z-20 left-0 right-0 top-full mt-1 bg-popover border rounded-md shadow-lg overflow-hidden">
+                    {phoneMatches.map((c) => (
+                      <li key={c.id}>
+                        <button
+                          type="button"
+                          className="w-full text-left px-3 py-2 hover:bg-accent"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => selectCustomer(c)}
+                        >
+                          <span className="font-medium">{c.phone}</span>
+                          <span className="text-sm text-muted-foreground ml-2">{c.name}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="description">Job Description *</Label>
@@ -310,6 +424,18 @@ const AddJob = () => {
           </form>
         </Card>
       </main>
+
+      <Dialog open={!!createdCode} onOpenChange={(o) => { if (!o) { setCreatedCode(null); navigate("/admin/dashboard"); } }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Job created</DialogTitle>
+          </DialogHeader>
+          {createdCode && <JobQRCode code={createdCode} />}
+          <Button onClick={() => { setCreatedCode(null); navigate("/admin/dashboard"); }}>
+            Done
+          </Button>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
