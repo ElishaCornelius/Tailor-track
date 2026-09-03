@@ -13,6 +13,9 @@ import AddJob from "./pages/AddJob";
 import Rankings from "./pages/Rankings";
 import History from "./pages/History";
 import CustomerTrack from "./pages/CustomerTrack";
+import CustomerLogin from "./pages/CustomerLogin";
+import CustomerPortal from "./pages/CustomerPortal";
+import Customers from "./pages/Customers";
 import Notifications from "./pages/Notifications";
 import NotFound from "./pages/NotFound";
 
@@ -35,7 +38,10 @@ const App = () => (
             <Route path="/admin/rankings" element={<Rankings />} />
             <Route path="/admin/history" element={<History />} />
             <Route path="/admin/notifications" element={<Notifications />} />
+            <Route path="/admin/customers" element={<Customers />} />
             <Route path="/customer/track" element={<CustomerTrack />} />
+            <Route path="/customer/login" element={<CustomerLogin />} />
+            <Route path="/customer/portal" element={<CustomerPortal />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
