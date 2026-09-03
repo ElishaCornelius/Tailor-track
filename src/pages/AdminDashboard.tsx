@@ -639,7 +639,6 @@ const AdminDashboard = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
 
       <Dialog open={!!qrJob} onOpenChange={(o) => !o && setQrJob(null)}>
         <DialogContent className="sm:max-w-sm">
@@ -652,7 +651,7 @@ const AdminDashboard = () => {
           {qrJob && <JobQRCode code={qrJob} />}
         </DialogContent>
       </Dialog>
-
+    </div>
   );
 };
 
