@@ -11,6 +11,8 @@ import {
   Pencil,
   Trash2,
   Bell,
+  QrCode,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -19,6 +21,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import StatusBadge from "@/components/StatusBadge";
 import PasswordConfirmDialog from "@/components/PasswordConfirmDialog";
+import JobQRCode from "@/components/JobQRCode";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -72,6 +75,7 @@ const AdminDashboard = () => {
   const [passwordOpen, setPasswordOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [qrJob, setQrJob] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({
     description: "",
     num_dresses: "",
@@ -373,11 +377,17 @@ const AdminDashboard = () => {
         </div>
 
         {/* Action Buttons */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
           <Link to="/admin/add-job">
             <Button className="w-full" size="lg">
               <Plus className="w-5 h-5 mr-2" />
               Add New Job
+            </Button>
+          </Link>
+          <Link to="/admin/customers">
+            <Button variant="outline" className="w-full" size="lg">
+              <Users className="w-5 h-5 mr-2" />
+              Customers
             </Button>
           </Link>
           <Link to="/admin/rankings">
@@ -480,6 +490,10 @@ const AdminDashboard = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => setQrJob(job.code)}>
+                            <QrCode className="w-4 h-4 mr-2" />
+                            Show QR code
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => requestEdit(job)}>
                             <Pencil className="w-4 h-4 mr-2" />
                             Edit job
@@ -623,6 +637,18 @@ const AdminDashboard = () => {
               {saving ? "Saving..." : "Save changes"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!qrJob} onOpenChange={(o) => !o && setQrJob(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Job QR Code</DialogTitle>
+            <DialogDescription>
+              Let the customer scan this to track the order instantly.
+            </DialogDescription>
+          </DialogHeader>
+          {qrJob && <JobQRCode code={qrJob} />}
         </DialogContent>
       </Dialog>
     </div>

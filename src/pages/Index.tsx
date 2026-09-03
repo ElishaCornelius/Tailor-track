@@ -61,13 +61,20 @@ const Index = () => {
               </div>
               <h2 className="text-2xl font-bold mb-3">Customer Portal</h2>
               <p className="text-muted-foreground mb-6">
-                Track your sewing order status with your job code
+                Scan a QR or use your job code — or sign in to see all your orders
               </p>
-              <Link to="/customer/track">
-                <Button variant="secondary" className="w-full" size="lg">
-                  Track My Order
-                </Button>
-              </Link>
+              <div className="space-y-3">
+                <Link to="/customer/track" className="block">
+                  <Button variant="secondary" className="w-full" size="lg">
+                    Track My Order
+                  </Button>
+                </Link>
+                <Link to="/customer/login" className="block">
+                  <Button variant="outline" className="w-full" size="lg">
+                    My Portal
+                  </Button>
+                </Link>
+              </div>
             </div>
           </Card>
         </div>

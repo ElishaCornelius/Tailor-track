@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import StatusBadge from "@/components/StatusBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -64,6 +64,26 @@ const CustomerTrack = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [pastJobs, setPastJobs] = useState<JobDetails[]>([]);
+  const [searchParams] = useSearchParams();
+
+  // Support QR codes that link to /customer/track?code=XXX
+  useEffect(() => {
+    const code = searchParams.get("code");
+    if (!code) return;
+    setJobCode(code);
+    setIsSearching(true);
+    fetchJob(code)
+      .then((job) => {
+        if (!job) {
+          setNotFound(true);
+          return;
+        }
+        setJobDetails(job);
+        addToList(STORAGE_KEY, job.code);
+      })
+      .catch(() => toast.error("Could not look up that job code."))
+      .finally(() => setIsSearching(false));
+  }, [searchParams]);
 
   // In-app notifications: check saved codes and alert on newly completed jobs
   useEffect(() => {
@@ -166,6 +186,9 @@ const CustomerTrack = () => {
           <form onSubmit={handleSearch} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="jobCode">Job Code</Label>
+            <p className="text-xs text-muted-foreground">
+              Have a QR code from your tailor? Just scan it with your phone camera.
+            </p>
               <div className="flex gap-2">
                 <Input
                   id="jobCode"
