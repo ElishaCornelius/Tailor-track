@@ -67,6 +67,42 @@ const CustomerTrack = () => {
   const [notFound, setNotFound] = useState(false);
   const [pastJobs, setPastJobs] = useState<JobDetails[]>([]);
   const [searchParams] = useSearchParams();
+  const [scanOpen, setScanOpen] = useState(false);
+
+  const lookup = useCallback(async (code: string) => {
+    setIsSearching(true);
+    setNotFound(false);
+    try {
+      const job = await fetchJob(code);
+      if (!job) {
+        setJobDetails(null);
+        setNotFound(true);
+        return;
+      }
+      setJobDetails(job);
+      addToList(STORAGE_KEY, job.code);
+      setPastJobs((prev) => [job, ...prev.filter((j) => j.code !== job.code)]);
+      if (job.status === "green") {
+        addToList(NOTIFIED_KEY, job.code);
+        toast.success("Your order is ready for pickup!");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not look up that job code. Please try again.");
+    } finally {
+      setIsSearching(false);
+    }
+  }, []);
+
+  const handleScanResult = useCallback(
+    (code: string) => {
+      setJobCode(code);
+      lookup(code);
+    },
+    [lookup],
+  );
+
+
 
   // Support QR codes that link to /customer/track?code=XXX
   useEffect(() => {
