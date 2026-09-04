@@ -1,13 +1,15 @@
-import { useEffect, useState } from "react";
-import { ArrowLeft, Search, Package, Bell, MessageCircle } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { ArrowLeft, Search, Package, Bell, MessageCircle, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Link, useSearchParams } from "react-router-dom";
 import StatusBadge from "@/components/StatusBadge";
+import QrScanDialog from "@/components/QrScanDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+
 
 type JobStatus = "red" | "yellow" | "green";
 
