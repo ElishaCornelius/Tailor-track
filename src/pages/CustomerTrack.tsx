@@ -203,9 +203,9 @@ const CustomerTrack = () => {
           <form onSubmit={handleSearch} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="jobCode">Job Code</Label>
-            <p className="text-xs text-muted-foreground">
-              Have a QR code from your tailor? Just scan it with your phone camera.
-            </p>
+              <p className="text-xs text-muted-foreground">
+                Have a QR code from your tailor? Scan it below, or type your job code.
+              </p>
               <div className="flex gap-2">
                 <Input
                   id="jobCode"
@@ -226,8 +226,24 @@ const CustomerTrack = () => {
                   )}
                 </Button>
               </div>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => setScanOpen(true)}
+              >
+                <Camera className="w-4 h-4 mr-2" />
+                Scan QR code with camera
+              </Button>
+              <p className="text-xs text-muted-foreground text-center">
+                Already have an account?{" "}
+                <Link to="/customer/login" className="text-primary hover:underline">
+                  Log in to see all your orders
+                </Link>
+              </p>
             </div>
           </form>
+
 
           {notFound && (
             <div className="mt-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
