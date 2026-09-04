@@ -344,7 +344,10 @@ const CustomerTrack = () => {
           </Card>
         )}
       </main>
+
+      <QrScanDialog open={scanOpen} onOpenChange={setScanOpen} onResult={handleScanResult} />
     </div>
+
   );
 };
 
