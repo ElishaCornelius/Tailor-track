@@ -1,13 +1,15 @@
-import { useEffect, useState } from "react";
-import { ArrowLeft, Search, Package, Bell, MessageCircle } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { ArrowLeft, Search, Package, Bell, MessageCircle, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Link, useSearchParams } from "react-router-dom";
 import StatusBadge from "@/components/StatusBadge";
+import QrScanDialog from "@/components/QrScanDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+
 
 type JobStatus = "red" | "yellow" | "green";
 
@@ -65,6 +67,42 @@ const CustomerTrack = () => {
   const [notFound, setNotFound] = useState(false);
   const [pastJobs, setPastJobs] = useState<JobDetails[]>([]);
   const [searchParams] = useSearchParams();
+  const [scanOpen, setScanOpen] = useState(false);
+
+  const lookup = useCallback(async (code: string) => {
+    setIsSearching(true);
+    setNotFound(false);
+    try {
+      const job = await fetchJob(code);
+      if (!job) {
+        setJobDetails(null);
+        setNotFound(true);
+        return;
+      }
+      setJobDetails(job);
+      addToList(STORAGE_KEY, job.code);
+      setPastJobs((prev) => [job, ...prev.filter((j) => j.code !== job.code)]);
+      if (job.status === "green") {
+        addToList(NOTIFIED_KEY, job.code);
+        toast.success("Your order is ready for pickup!");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not look up that job code. Please try again.");
+    } finally {
+      setIsSearching(false);
+    }
+  }, []);
+
+  const handleScanResult = useCallback(
+    (code: string) => {
+      setJobCode(code);
+      lookup(code);
+    },
+    [lookup],
+  );
+
+
 
   // Support QR codes that link to /customer/track?code=XXX
   useEffect(() => {
@@ -115,30 +153,9 @@ const CustomerTrack = () => {
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSearching(true);
-    setNotFound(false);
-
-    try {
-      const job = await fetchJob(jobCode);
-      if (!job) {
-        setJobDetails(null);
-        setNotFound(true);
-      } else {
-        setJobDetails(job);
-        addToList(STORAGE_KEY, job.code);
-        setPastJobs((prev) => [job, ...prev.filter((j) => j.code !== job.code)]);
-        if (job.status === "green") {
-          addToList(NOTIFIED_KEY, job.code);
-          toast.success("Your order is ready for pickup!");
-        }
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Could not look up that job code. Please try again.");
-    } finally {
-      setIsSearching(false);
-    }
+    await lookup(jobCode);
   };
+
 
   const getStatusMessage = (status: JobStatus) => {
     switch (status) {
@@ -186,9 +203,9 @@ const CustomerTrack = () => {
           <form onSubmit={handleSearch} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="jobCode">Job Code</Label>
-            <p className="text-xs text-muted-foreground">
-              Have a QR code from your tailor? Just scan it with your phone camera.
-            </p>
+              <p className="text-xs text-muted-foreground">
+                Have a QR code from your tailor? Scan it below, or type your job code.
+              </p>
               <div className="flex gap-2">
                 <Input
                   id="jobCode"
@@ -209,8 +226,24 @@ const CustomerTrack = () => {
                   )}
                 </Button>
               </div>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => setScanOpen(true)}
+              >
+                <Camera className="w-4 h-4 mr-2" />
+                Scan QR code with camera
+              </Button>
+              <p className="text-xs text-muted-foreground text-center">
+                Already have an account?{" "}
+                <Link to="/customer/login" className="text-primary hover:underline">
+                  Log in to see all your orders
+                </Link>
+              </p>
             </div>
           </form>
+
 
           {notFound && (
             <div className="mt-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
@@ -311,7 +344,10 @@ const CustomerTrack = () => {
           </Card>
         )}
       </main>
+
+      <QrScanDialog open={scanOpen} onOpenChange={setScanOpen} onResult={handleScanResult} />
     </div>
+
   );
 };
 

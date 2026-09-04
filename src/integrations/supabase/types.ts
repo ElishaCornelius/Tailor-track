@@ -309,6 +309,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_reset_customer_passcode: {
+        Args: { p_customer_id: string; p_passcode: string }
+        Returns: undefined
+      }
       customer_account_exists: { Args: { p_phone: string }; Returns: boolean }
       customer_jobs: {
         Args: { p_token: string }

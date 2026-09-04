@@ -16,7 +16,9 @@ import CustomerTrack from "./pages/CustomerTrack";
 import CustomerLogin from "./pages/CustomerLogin";
 import CustomerPortal from "./pages/CustomerPortal";
 import Customers from "./pages/Customers";
+import Debtors from "./pages/Debtors";
 import Notifications from "./pages/Notifications";
+
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +41,8 @@ const App = () => (
             <Route path="/admin/history" element={<History />} />
             <Route path="/admin/notifications" element={<Notifications />} />
             <Route path="/admin/customers" element={<Customers />} />
+            <Route path="/admin/debtors" element={<Debtors />} />
+
             <Route path="/customer/track" element={<CustomerTrack />} />
             <Route path="/customer/login" element={<CustomerLogin />} />
             <Route path="/customer/portal" element={<CustomerPortal />} />

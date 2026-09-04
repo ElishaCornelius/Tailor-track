@@ -13,6 +13,8 @@ import {
   Bell,
   QrCode,
   Users,
+  Wallet,
+
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -76,6 +78,12 @@ const AdminDashboard = () => {
   const [editOpen, setEditOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [qrJob, setQrJob] = useState<string | null>(null);
+  const [completeJob, setCompleteJob] = useState<Job | null>(null);
+  const [completeForm, setCompleteForm] = useState({
+    amount_paid: "",
+    outstanding_amount: "",
+  });
+
   const [editForm, setEditForm] = useState({
     description: "",
     num_dresses: "",
@@ -162,30 +170,75 @@ const AdminDashboard = () => {
   };
 
   const handleStatusChange = async (jobId: string, newStatus: JobStatus) => {
+    const job = jobs.find((j) => j.id === jobId);
+
+    // Completing a job: ask for the balance still owed before saving
+    if (newStatus === "green" && job) {
+      const remaining = Math.max(job.price - job.amount_paid, 0);
+      setCompleteJob(job);
+      setCompleteForm({
+        amount_paid: String(job.amount_paid || 0),
+        outstanding_amount: String(
+          job.outstanding_amount > 0 ? job.outstanding_amount : remaining,
+        ),
+      });
+      return;
+    }
+
     const { error } = await supabase
       .from("jobs")
-      .update({ 
-        status: newStatus,
-        completed_at: newStatus === "green" ? new Date().toISOString() : null
-      })
+      .update({ status: newStatus, completed_at: null })
       .eq("id", jobId);
 
     if (error) {
       toast.error("Failed to update job status");
-    } else {
-      setJobs(
-        jobs.map((job) =>
-          job.id === jobId ? { ...job, status: newStatus } : job
-        )
+      return;
+    }
+    setJobs(jobs.map((j) => (j.id === jobId ? { ...j, status: newStatus } : j)));
+    toast.success("Job status updated");
+  };
+
+  const completeJobNow = async () => {
+    if (!completeJob) return;
+    const paid = Number(completeForm.amount_paid) || 0;
+    const outstanding = Number(completeForm.outstanding_amount) || 0;
+    if (paid < 0 || outstanding < 0) {
+      toast.error("Amounts cannot be negative");
+      return;
+    }
+    setSaving(true);
+    const { error } = await supabase
+      .from("jobs")
+      .update({
+        status: "green",
+        completed_at: new Date().toISOString(),
+        amount_paid: paid,
+        outstanding_amount: outstanding,
+      })
+      .eq("id", completeJob.id);
+    setSaving(false);
+
+    if (error) {
+      toast.error("Failed to complete this job");
+      return;
+    }
+
+    const updated: Job = {
+      ...completeJob,
+      status: "green",
+      amount_paid: paid,
+      outstanding_amount: outstanding,
+    };
+    setJobs((prev) => prev.map((j) => (j.id === updated.id ? updated : j)));
+    setCompleteJob(null);
+    notifyCustomer(updated);
+    if (outstanding > 0) {
+      toast.info(
+        `₦${outstanding.toLocaleString()} still owed — this will be added to ${completeJob.customer_name}'s next job.`,
       );
-      if (newStatus === "green") {
-        const job = jobs.find((j) => j.id === jobId);
-        if (job) notifyCustomer({ ...job, status: newStatus });
-      } else {
-        toast.success("Job status updated");
-      }
     }
   };
+
 
   const whatsappLink = (job: Job) => {
     const digits = (job.customer_phone || "").replace(/\D/g, "");
@@ -377,7 +430,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* Action Buttons */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
           <Link to="/admin/add-job">
             <Button className="w-full" size="lg">
               <Plus className="w-5 h-5 mr-2" />
@@ -390,6 +443,13 @@ const AdminDashboard = () => {
               Customers
             </Button>
           </Link>
+          <Link to="/admin/debtors">
+            <Button variant="outline" className="w-full" size="lg">
+              <Wallet className="w-5 h-5 mr-2" />
+              Owing
+            </Button>
+          </Link>
+
           <Link to="/admin/rankings">
             <Button variant="outline" className="w-full" size="lg">
               <TrendingUp className="w-5 h-5 mr-2" />
@@ -511,12 +571,19 @@ const AdminDashboard = () => {
                   </div>
                   <p className="text-sm mb-2">{job.description}</p>
                   <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                    <span>Dresses: {job.num_dresses}</span>
+                    <span>Items: {job.num_dresses}</span>
                     <span>Price: ₦{job.price.toLocaleString()}</span>
+                    <span>Paid: ₦{job.amount_paid.toLocaleString()}</span>
+                    {job.outstanding_amount > 0 && (
+                      <span className="text-status-red font-medium">
+                        Owing: ₦{job.outstanding_amount.toLocaleString()}
+                      </span>
+                    )}
                     <span>
                       Date: {new Date(job.created_at).toLocaleDateString()}
                     </span>
                   </div>
+
                 </div>
               ))}
             </div>
