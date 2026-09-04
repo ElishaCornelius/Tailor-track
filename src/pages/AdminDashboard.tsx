@@ -571,12 +571,19 @@ const AdminDashboard = () => {
                   </div>
                   <p className="text-sm mb-2">{job.description}</p>
                   <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                    <span>Dresses: {job.num_dresses}</span>
+                    <span>Items: {job.num_dresses}</span>
                     <span>Price: ₦{job.price.toLocaleString()}</span>
+                    <span>Paid: ₦{job.amount_paid.toLocaleString()}</span>
+                    {job.outstanding_amount > 0 && (
+                      <span className="text-status-red font-medium">
+                        Owing: ₦{job.outstanding_amount.toLocaleString()}
+                      </span>
+                    )}
                     <span>
                       Date: {new Date(job.created_at).toLocaleDateString()}
                     </span>
                   </div>
+
                 </div>
               ))}
             </div>
