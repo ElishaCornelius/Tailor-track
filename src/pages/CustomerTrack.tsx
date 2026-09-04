@@ -153,30 +153,9 @@ const CustomerTrack = () => {
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSearching(true);
-    setNotFound(false);
-
-    try {
-      const job = await fetchJob(jobCode);
-      if (!job) {
-        setJobDetails(null);
-        setNotFound(true);
-      } else {
-        setJobDetails(job);
-        addToList(STORAGE_KEY, job.code);
-        setPastJobs((prev) => [job, ...prev.filter((j) => j.code !== job.code)]);
-        if (job.status === "green") {
-          addToList(NOTIFIED_KEY, job.code);
-          toast.success("Your order is ready for pickup!");
-        }
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Could not look up that job code. Please try again.");
-    } finally {
-      setIsSearching(false);
-    }
+    await lookup(jobCode);
   };
+
 
   const getStatusMessage = (status: JobStatus) => {
     switch (status) {
