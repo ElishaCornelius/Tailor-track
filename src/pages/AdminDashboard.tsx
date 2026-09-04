@@ -428,7 +428,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* Action Buttons */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
           <Link to="/admin/add-job">
             <Button className="w-full" size="lg">
               <Plus className="w-5 h-5 mr-2" />
@@ -441,6 +441,13 @@ const AdminDashboard = () => {
               Customers
             </Button>
           </Link>
+          <Link to="/admin/debtors">
+            <Button variant="outline" className="w-full" size="lg">
+              <Wallet className="w-5 h-5 mr-2" />
+              Owing
+            </Button>
+          </Link>
+
           <Link to="/admin/rankings">
             <Button variant="outline" className="w-full" size="lg">
               <TrendingUp className="w-5 h-5 mr-2" />
