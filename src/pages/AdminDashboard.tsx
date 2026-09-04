@@ -162,30 +162,75 @@ const AdminDashboard = () => {
   };
 
   const handleStatusChange = async (jobId: string, newStatus: JobStatus) => {
+    const job = jobs.find((j) => j.id === jobId);
+
+    // Completing a job: ask for the balance still owed before saving
+    if (newStatus === "green" && job) {
+      const remaining = Math.max(job.price - job.amount_paid, 0);
+      setCompleteJob(job);
+      setCompleteForm({
+        amount_paid: String(job.amount_paid || 0),
+        outstanding_amount: String(
+          job.outstanding_amount > 0 ? job.outstanding_amount : remaining,
+        ),
+      });
+      return;
+    }
+
     const { error } = await supabase
       .from("jobs")
-      .update({ 
-        status: newStatus,
-        completed_at: newStatus === "green" ? new Date().toISOString() : null
-      })
+      .update({ status: newStatus, completed_at: null })
       .eq("id", jobId);
 
     if (error) {
       toast.error("Failed to update job status");
-    } else {
-      setJobs(
-        jobs.map((job) =>
-          job.id === jobId ? { ...job, status: newStatus } : job
-        )
+      return;
+    }
+    setJobs(jobs.map((j) => (j.id === jobId ? { ...j, status: newStatus } : j)));
+    toast.success("Job status updated");
+  };
+
+  const completeJobNow = async () => {
+    if (!completeJob) return;
+    const paid = Number(completeForm.amount_paid) || 0;
+    const outstanding = Number(completeForm.outstanding_amount) || 0;
+    if (paid < 0 || outstanding < 0) {
+      toast.error("Amounts cannot be negative");
+      return;
+    }
+    setSaving(true);
+    const { error } = await supabase
+      .from("jobs")
+      .update({
+        status: "green",
+        completed_at: new Date().toISOString(),
+        amount_paid: paid,
+        outstanding_amount: outstanding,
+      })
+      .eq("id", completeJob.id);
+    setSaving(false);
+
+    if (error) {
+      toast.error("Failed to complete this job");
+      return;
+    }
+
+    const updated: Job = {
+      ...completeJob,
+      status: "green",
+      amount_paid: paid,
+      outstanding_amount: outstanding,
+    };
+    setJobs((prev) => prev.map((j) => (j.id === updated.id ? updated : j)));
+    setCompleteJob(null);
+    notifyCustomer(updated);
+    if (outstanding > 0) {
+      toast.info(
+        `₦${outstanding.toLocaleString()} still owed — this will be added to ${completeJob.customer_name}'s next job.`,
       );
-      if (newStatus === "green") {
-        const job = jobs.find((j) => j.id === jobId);
-        if (job) notifyCustomer({ ...job, status: newStatus });
-      } else {
-        toast.success("Job status updated");
-      }
     }
   };
+
 
   const whatsappLink = (job: Job) => {
     const digits = (job.customer_phone || "").replace(/\D/g, "");
