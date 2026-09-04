@@ -16,7 +16,9 @@ import CustomerTrack from "./pages/CustomerTrack";
 import CustomerLogin from "./pages/CustomerLogin";
 import CustomerPortal from "./pages/CustomerPortal";
 import Customers from "./pages/Customers";
+import Debtors from "./pages/Debtors";
 import Notifications from "./pages/Notifications";
+
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
