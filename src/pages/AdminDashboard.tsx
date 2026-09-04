@@ -76,6 +76,12 @@ const AdminDashboard = () => {
   const [editOpen, setEditOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [qrJob, setQrJob] = useState<string | null>(null);
+  const [completeJob, setCompleteJob] = useState<Job | null>(null);
+  const [completeForm, setCompleteForm] = useState({
+    amount_paid: "",
+    outstanding_amount: "",
+  });
+
   const [editForm, setEditForm] = useState({
     description: "",
     num_dresses: "",
