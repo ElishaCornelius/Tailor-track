@@ -123,20 +123,65 @@ const AdminLogin = () => {
 
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  className="pr-10"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <div className="text-right">
+                <button
+                  type="button"
+                  onClick={() => { setResetEmail(email); setForgotOpen(true); }}
+                  className="text-sm text-primary hover:underline"
+                >
+                  Forgot password?
+                </button>
+              </div>
             </div>
 
             <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
               {isLoading ? "Logging in..." : "Login"}
             </Button>
           </form>
+
+          <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
+            <DialogContent className="sm:max-w-sm">
+              <DialogHeader>
+                <DialogTitle>Reset your password</DialogTitle>
+                <DialogDescription>
+                  We'll email you a verification code to confirm the account is yours.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-2">
+                <Label htmlFor="resetEmail">Email</Label>
+                <Input
+                  id="resetEmail"
+                  type="email"
+                  placeholder="you@company.com"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                />
+              </div>
+              <Button onClick={sendResetCode} disabled={sending}>
+                {sending ? "Sending..." : "Send verification code"}
+              </Button>
+            </DialogContent>
+          </Dialog>
+
 
           <p className="text-sm text-muted-foreground text-center mt-6">
             Don't have an account?{" "}
