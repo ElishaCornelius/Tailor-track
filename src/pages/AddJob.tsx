@@ -58,6 +58,8 @@ const AddJob = () => {
   const [showNameSuggestions, setShowNameSuggestions] = useState(false);
   const [showPhoneSuggestions, setShowPhoneSuggestions] = useState(false);
   const [createdCode, setCreatedCode] = useState<string | null>(null);
+  const [carriedOver, setCarriedOver] = useState(0);
+
   const nameRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
