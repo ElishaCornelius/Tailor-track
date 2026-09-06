@@ -707,6 +707,56 @@ const AdminDashboard = () => {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={!!completeJob} onOpenChange={(o) => !o && setCompleteJob(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Complete job {completeJob?.code}</DialogTitle>
+            <DialogDescription>
+              Confirm what {completeJob?.customer_name} has paid. Anything still owed is carried
+              over to their next job automatically.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="complete-paid">Amount paid (₦)</Label>
+              <Input
+                id="complete-paid"
+                type="number"
+                min="0"
+                value={completeForm.amount_paid}
+                onChange={(e) =>
+                  setCompleteForm({ ...completeForm, amount_paid: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="complete-outstanding">Outstanding (₦)</Label>
+              <Input
+                id="complete-outstanding"
+                type="number"
+                min="0"
+                value={completeForm.outstanding_amount}
+                onChange={(e) =>
+                  setCompleteForm({ ...completeForm, outstanding_amount: e.target.value })
+                }
+              />
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Total price: ₦{(completeJob?.price ?? 0).toLocaleString()}
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCompleteJob(null)}>
+              Cancel
+            </Button>
+            <Button onClick={completeJobNow} disabled={saving}>
+              {saving ? "Saving..." : "Mark completed"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
       <Dialog open={!!qrJob} onOpenChange={(o) => !o && setQrJob(null)}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
