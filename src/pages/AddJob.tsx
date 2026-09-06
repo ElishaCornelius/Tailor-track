@@ -392,7 +392,14 @@ const AddJob = () => {
                   value={formData.outstandingAmount}
                   onChange={(e) => setFormData({ ...formData, outstandingAmount: e.target.value })}
                 />
+                {carriedOver > 0 && (
+                  <p className="text-xs text-status-red">
+                    ₦{carriedOver.toLocaleString()} carried over from this customer's earlier
+                    unpaid jobs.
+                  </p>
+                )}
               </div>
+
             </div>
 
             <div className="space-y-2">
