@@ -93,12 +93,29 @@ const AddJob = () => {
       .slice(0, 6);
   }, [customers, formData.customerPhone]);
 
-  const selectCustomer = (c: CustomerOption) => {
+  const selectCustomer = async (c: CustomerOption) => {
     setFormData((prev) => ({ ...prev, customerName: c.name, customerPhone: c.phone ?? "" }));
     setMatchedCustomerId(c.id);
     setShowNameSuggestions(false);
     setShowPhoneSuggestions(false);
+
+    // Carry over any balance the customer still owes from earlier jobs
+    const { data } = await supabase
+      .from("jobs")
+      .select("outstanding_amount")
+      .eq("customer_id", c.id)
+      .gt("outstanding_amount", 0);
+    const owed = (data ?? []).reduce(
+      (sum, j: { outstanding_amount: number | null }) => sum + Number(j.outstanding_amount ?? 0),
+      0,
+    );
+    setCarriedOver(owed);
+    if (owed > 0) {
+      setFormData((prev) => ({ ...prev, outstandingAmount: String(owed) }));
+      toast.info(`₦${owed.toLocaleString()} unpaid from earlier jobs has been carried over.`);
+    }
   };
+
 
   const showPhoneField = formData.customerName.trim().length > 0;
 
