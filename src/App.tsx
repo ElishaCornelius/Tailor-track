@@ -14,6 +14,8 @@ import Rankings from "./pages/Rankings";
 import History from "./pages/History";
 import CustomerTrack from "./pages/CustomerTrack";
 import CustomerLogin from "./pages/CustomerLogin";
+import ResetPassword from "./pages/ResetPassword";
+
 import CustomerPortal from "./pages/CustomerPortal";
 import Customers from "./pages/Customers";
 import Debtors from "./pages/Debtors";
@@ -35,6 +37,8 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/company/register" element={<CompanyRegister />} />
             <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/add-job" element={<AddJob />} />
             <Route path="/admin/rankings" element={<Rankings />} />
