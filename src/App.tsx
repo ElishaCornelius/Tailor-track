@@ -14,6 +14,8 @@ import Rankings from "./pages/Rankings";
 import History from "./pages/History";
 import CustomerTrack from "./pages/CustomerTrack";
 import CustomerLogin from "./pages/CustomerLogin";
+import ResetPassword from "./pages/ResetPassword";
+
 import CustomerPortal from "./pages/CustomerPortal";
 import Customers from "./pages/Customers";
 import Debtors from "./pages/Debtors";
