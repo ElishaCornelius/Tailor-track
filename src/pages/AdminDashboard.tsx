@@ -554,6 +554,17 @@ const AdminDashboard = () => {
                             <QrCode className="w-4 h-4 mr-2" />
                             Show QR code
                           </DropdownMenuItem>
+                          {job.outstanding_amount > 0 && (
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setPayJob(job);
+                                setPayAmount("");
+                              }}
+                            >
+                              <Wallet className="w-4 h-4 mr-2" />
+                              Record payment
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem onClick={() => requestEdit(job)}>
                             <Pencil className="w-4 h-4 mr-2" />
                             Edit job
