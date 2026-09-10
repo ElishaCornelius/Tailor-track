@@ -811,6 +811,45 @@ const AdminDashboard = () => {
       </Dialog>
 
 
+      <Dialog open={!!payJob} onOpenChange={(o) => !o && setPayJob(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Record payment for {payJob?.code}</DialogTitle>
+            <DialogDescription>
+              {payJob?.customer_name} still owes ₦
+              {Number(payJob?.outstanding_amount ?? 0).toLocaleString()}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="pay-amount">Amount paid now (₦)</Label>
+            <Input
+              id="pay-amount"
+              type="number"
+              min={0}
+              value={payAmount}
+              onChange={(e) => setPayAmount(e.target.value)}
+              placeholder="0"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setPayAmount(String(payJob?.outstanding_amount ?? 0))}
+            >
+              Paid in full
+            </Button>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPayJob(null)}>
+              Cancel
+            </Button>
+            <Button onClick={recordPayment} disabled={saving}>
+              {saving ? "Saving..." : "Save payment"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!qrJob} onOpenChange={(o) => !o && setQrJob(null)}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
