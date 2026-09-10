@@ -333,7 +333,7 @@ const AddJob = () => {
               <Label htmlFor="description">Job Description *</Label>
               <Textarea
                 id="description"
-                placeholder="e.g., 2 Ankara gowns, 1 shirt"
+                placeholder="e.g., 2 items repaired, 1 custom order"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 required

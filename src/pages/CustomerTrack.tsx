@@ -204,7 +204,7 @@ const CustomerTrack = () => {
             <div className="space-y-2">
               <Label htmlFor="jobCode">Job Code</Label>
               <p className="text-xs text-muted-foreground">
-                Have a QR code from your tailor? Scan it below, or type your job code.
+                Have a QR code from the company? Scan it below, or type your job code.
               </p>
               <div className="flex gap-2">
                 <Input
@@ -272,7 +272,7 @@ const CustomerTrack = () => {
               </div>
 
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Number of Dresses</p>
+                <p className="text-sm text-muted-foreground mb-1">Number of Items</p>
                 <p className="font-medium">{jobDetails.numberOfDresses}</p>
               </div>
 
