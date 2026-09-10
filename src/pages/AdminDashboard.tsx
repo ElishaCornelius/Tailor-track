@@ -241,6 +241,47 @@ const AdminDashboard = () => {
     }
   };
 
+  const recordPayment = async () => {
+    if (!payJob) return;
+    const amount = Number(payAmount) || 0;
+    if (amount <= 0) {
+      toast.error("Enter an amount greater than zero");
+      return;
+    }
+    if (amount > Number(payJob.outstanding_amount)) {
+      toast.error("That is more than this customer owes on this job");
+      return;
+    }
+    const newPaid = Number(payJob.amount_paid) + amount;
+    const newOutstanding = Number(payJob.outstanding_amount) - amount;
+
+    setSaving(true);
+    const { error } = await supabase
+      .from("jobs")
+      .update({ amount_paid: newPaid, outstanding_amount: newOutstanding })
+      .eq("id", payJob.id);
+    setSaving(false);
+
+    if (error) {
+      toast.error("Could not save this payment");
+      return;
+    }
+
+    setJobs((prev) =>
+      prev.map((j) =>
+        j.id === payJob.id
+          ? { ...j, amount_paid: newPaid, outstanding_amount: newOutstanding }
+          : j,
+      ),
+    );
+    setPayJob(null);
+    setPayAmount("");
+    toast.success(
+      newOutstanding === 0
+        ? "Payment recorded — this job is now fully paid"
+        : `Payment recorded — ₦${newOutstanding.toLocaleString()} still owing`,
+    );
+  };
 
   const whatsappLink = (job: Job) => {
     const digits = (job.customer_phone || "").replace(/\D/g, "");
