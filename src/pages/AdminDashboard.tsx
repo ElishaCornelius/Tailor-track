@@ -515,20 +515,22 @@ const AdminDashboard = () => {
 
         {/* Jobs List */}
         <Card className="p-6">
-          <h2 className="text-2xl font-bold mb-6">All Jobs</h2>
-          {jobs.length === 0 ? (
+          <h2 className="text-2xl font-bold mb-6">Active Jobs</h2>
+          {jobs.filter((j) => j.status !== "green").length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-muted-foreground mb-4">No jobs yet</p>
+              <p className="text-muted-foreground mb-4">
+                {jobs.length === 0 ? "No jobs yet" : "No active jobs — completed jobs are in History"}
+              </p>
               <Link to="/admin/add-job">
                 <Button>
                   <Plus className="w-4 h-4 mr-2" />
-                  Add Your First Job
+                  Add a New Job
                 </Button>
               </Link>
             </div>
           ) : (
             <div className="space-y-4">
-              {jobs.map((job) => (
+              {jobs.filter((j) => j.status !== "green").map((job) => (
                 <div
                   key={job.id}
                   className="p-4 border rounded-lg hover:bg-accent/5 transition-colors"
