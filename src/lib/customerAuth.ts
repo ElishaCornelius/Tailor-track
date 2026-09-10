@@ -103,7 +103,7 @@ export const enableBiometric = async (phone: string, token: string) => {
   const cred = (await navigator.credentials.create({
     publicKey: {
       challenge,
-      rp: { name: "Tailor Track", id: window.location.hostname },
+      rp: { name: "Order Track", id: window.location.hostname },
       user: { id: userId, name: phone, displayName: phone },
       pubKeyCredParams: [
         { type: "public-key", alg: -7 },

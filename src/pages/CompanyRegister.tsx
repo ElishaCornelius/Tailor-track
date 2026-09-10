@@ -138,7 +138,7 @@ const CompanyRegister = () => {
             </div>
             <h1 className="text-3xl font-bold mb-2">Register Your Company</h1>
             <p className="text-muted-foreground">
-              Create your sewing company workspace
+              Create your business workspace
             </p>
           </div>
 
@@ -148,7 +148,7 @@ const CompanyRegister = () => {
               <Input
                 id="companyName"
                 type="text"
-                placeholder="Bella Stitches"
+                placeholder="Your company name"
                 value={formData.companyName}
                 onChange={(e) =>
                   setFormData({ ...formData, companyName: e.target.value })
@@ -162,7 +162,7 @@ const CompanyRegister = () => {
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@bellastitches.com"
+                placeholder="admin@yourcompany.com"
                 value={formData.email}
                 onChange={(e) =>
                   setFormData({ ...formData, email: e.target.value })

@@ -70,7 +70,7 @@ const QrScanDialog = ({ open, onOpenChange, onResult }: QrScanDialogProps) => {
         <DialogHeader>
           <DialogTitle>Scan your QR code</DialogTitle>
           <DialogDescription>
-            Point your camera at the QR code your tailor gave you.
+            Point your camera at the QR code the company gave you.
           </DialogDescription>
         </DialogHeader>
         <div className="overflow-hidden rounded-lg bg-muted aspect-square">

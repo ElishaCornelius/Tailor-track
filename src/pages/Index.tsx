@@ -12,10 +12,10 @@ const Index = () => {
             <Scissors className="w-10 h-10 text-primary" />
           </div>
           <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-            Tailor Track
+            Order Track
           </h1>
           <p className="text-xl text-muted-foreground">
-            Professional Sewing Job Management
+            Professional Job & Order Management
           </p>
         </div>
 
@@ -27,7 +27,7 @@ const Index = () => {
               </div>
               <h2 className="text-2xl font-bold mb-3">Register Company</h2>
               <p className="text-muted-foreground mb-6">
-                Create your sewing company workspace
+                Create your business workspace
               </p>
               <Link to="/company/register">
                 <Button className="w-full" size="lg">
