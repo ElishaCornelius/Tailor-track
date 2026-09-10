@@ -79,6 +79,8 @@ const AdminDashboard = () => {
   const [saving, setSaving] = useState(false);
   const [qrJob, setQrJob] = useState<string | null>(null);
   const [completeJob, setCompleteJob] = useState<Job | null>(null);
+  const [payJob, setPayJob] = useState<Job | null>(null);
+  const [payAmount, setPayAmount] = useState("");
   const [completeForm, setCompleteForm] = useState({
     amount_paid: "",
     outstanding_amount: "",
